@@ -54,15 +54,30 @@ interface LeaderboardResponse {
 export default function LeaderboardView() {
   const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedVenue, setSelectedVenue] = useState<string>('ALL')
   const [viewMode, setViewMode] = useState<'matrix' | 'scatter'>('matrix')
   const [hoveredPoint, setHoveredPoint] = useState<LeaderboardItem | null>(null)
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true)
+    setError(null)
     api.leaderboard()
-      .then(setData)
-      .catch(console.error)
+      .then(res => {
+        if (!res || !Array.isArray(res.leaderboard)) {
+          throw new Error('Invalid leaderboard payload')
+        }
+        setData(res)
+      })
+      .catch(err => {
+        console.error(err)
+        setError(err.message || 'Failed to load leaderboard')
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
 
   if (loading) {
@@ -74,8 +89,30 @@ export default function LeaderboardView() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-3xl p-8 text-center space-y-3">
+        <AlertTriangle className="w-8 h-8 text-rose-600 mx-auto" />
+        <h3 className="text-base font-bold text-rose-950">Unable to Load Leaderboard</h3>
+        <p className="text-xs text-rose-700 max-w-md mx-auto">{error}</p>
+        <button
+          onClick={fetchData}
+          className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full text-xs font-semibold shadow-sm transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
   if (!data || !data.leaderboard || data.leaderboard.length === 0) {
-    return null
+    return (
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-12 text-center text-slate-500 shadow-sm space-y-2">
+        <Trophy className="w-8 h-8 text-slate-400 mx-auto" />
+        <h3 className="text-base font-bold text-slate-800">No Audited Papers Yet</h3>
+        <p className="text-xs text-slate-500">Run your first reproduction project to populate the macro leaderboard.</p>
+      </div>
+    )
   }
 
   const venues = ['ALL', ...Array.from(new Set(data.leaderboard.map(i => i.venue)))]
