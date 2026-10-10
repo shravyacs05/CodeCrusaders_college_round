@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from .config import DATA_DIR, TOLERANCE_PP
 from .services import (checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
                        paper_analyzer, reconciler, repo_scanner, report, runner,
-                       spec_builder, verifier, versioning)
+                       spec_builder, verifier, versioning, robustness_radar)
 
 app = FastAPI(title="CrisisGrid")
 if (Path(__file__).resolve().parents[2] / "frontend" / "dist" / "assets").exists():
@@ -429,5 +429,181 @@ def get_project_notebook(pid: str, experiment_id: str | None = None):
         media_type="application/x-ipynb+json",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+
+@app.get("/leaderboard")
+def get_macro_leaderboard():
+    """Aggregate multi-paper reproducibility leaderboard across all audited research projects."""
+    rows = []
+    total_delta = 0.0
+    delta_count = 0
+    clean_count = 0
+
+    for d in DATA_DIR.iterdir():
+        f = d / "project.json"
+        if not f.exists():
+            continue
+        try:
+            p = json.loads(f.read_text())
+        except Exception:
+            continue
+
+        pid = p.get("id", d.name)
+        name = p.get("name", "Unnamed Project")
+        repo_url = p.get("repo_url", "")
+        status = p.get("status", "analyzed")
+        exps = p.get("experiments", {})
+        if not exps:
+            continue
+
+        # Get latest experiment
+        latest_exp = max(exps.values(), key=lambda e: e.get("version", 1))
+        eid = latest_exp.get("id")
+        spec = latest_exp.get("spec", {})
+        claim = spec.get("claim", {})
+        runs = p.get("runs", {}).get(eid, {})
+        results = runs.get("results", [])
+
+        # Infer paper conference / domain
+        repo_lower = (repo_url or "").lower()
+        name_lower = name.lower()
+        if "textcnn" in repo_lower or "textcnn" in name_lower or "kim" in name_lower:
+            venue = "EMNLP 2014"
+            domain = "NLP / Text Classification"
+        elif "mixup" in repo_lower or "mixup" in name_lower:
+            venue = "ICLR 2018"
+            domain = "Vision / Regularization"
+        elif "sam" in repo_lower or "sharpness" in name_lower:
+            venue = "ICLR 2021"
+            domain = "Optimization / Generalization"
+        elif "resnet" in repo_lower or "cifar" in repo_lower:
+            venue = "CVPR 2016"
+            domain = "Computer Vision"
+        else:
+            venue = "Machine Learning"
+            domain = "Empirical Deep Learning"
+
+        # Verification metrics
+        published = claim.get("value")
+        clean_runs = [r["accuracy"] for r in results if isinstance(r, dict) and r.get("accuracy") is not None]
+        ver_status = "UNTESTED"
+        reproduced_mean = None
+        std_val = 0.0
+        diff_pp = None
+
+        if published is not None and clean_runs:
+            ver = verifier.verify(float(published), clean_runs)
+            ver_status = ver.get("status", "UNKNOWN")
+            reproduced_mean = round(ver.get("reproduced_mean", 0.0), 2)
+            std_val = round(ver.get("std", 0.0), 2)
+            diff_pp = round(ver.get("diff_pp", 0.0), 2)
+            total_delta += abs(diff_pp)
+            delta_count += 1
+        elif published is not None:
+            ver_status = "PENDING_RUN"
+
+        # Checklist audit
+        chk = checklist_auditor.audit_checklist(p, eid)
+        compliance_pct = chk.get("score_pct", 50)
+        grade = chk.get("grade", "C")
+
+        # Leakage audit
+        repo_path = p.get("repo_path") or str(_p(pid) / "repo")
+        is_clean_leak = True
+        try:
+            from pathlib import Path
+            if Path(repo_path).exists():
+                leaks = leakage_detector.scan_repo_for_leakage(Path(repo_path))
+                is_clean_leak = (len(leaks) == 0)
+        except Exception:
+            is_clean_leak = True
+
+        if is_clean_leak:
+            clean_count += 1
+
+        # Auto-healer count
+        heals_applied = sum(len(e.get("diff_from_parent", [])) for e in exps.values())
+
+        rows.append({
+            "id": pid,
+            "name": name,
+            "repo_url": repo_url,
+            "status": status,
+            "venue": venue,
+            "domain": domain,
+            "claim_metric": claim.get("metric", "accuracy").upper(),
+            "published": published,
+            "reproduced_mean": reproduced_mean,
+            "diff_pp": diff_pp,
+            "seed_std": std_val,
+            "seeds_count": len(clean_runs),
+            "verification_status": ver_status,
+            "compliance_pct": compliance_pct,
+            "grade": grade,
+            "leakage_clean": is_clean_leak,
+            "heals_applied": heals_applied,
+            "versions_count": len(exps),
+        })
+
+    # Sort by compliance score descending, then by claim delta proximity
+    rows.sort(key=lambda r: (
+        -r["compliance_pct"],
+        abs(r["diff_pp"]) if r["diff_pp"] is not None else 999.0
+    ))
+
+    for idx, r in enumerate(rows):
+        r["rank"] = idx + 1
+
+    total_papers = len(rows)
+    reproduced_count = sum(1 for r in rows if r["verification_status"] in ("REPRODUCED", "PARTIALLY_REPRODUCED"))
+    reproduced_pct = round((reproduced_count / total_papers * 100), 1) if total_papers else 0.0
+    mean_compliance = round(sum(r["compliance_pct"] for r in rows) / total_papers, 1) if total_papers else 0.0
+    clean_pct = round((clean_count / total_papers * 100), 1) if total_papers else 100.0
+    avg_delta = round(total_delta / max(1, delta_count), 2)
+
+    return {
+        "leaderboard": rows,
+        "summary": {
+            "total_papers": total_papers,
+            "reproduced_count": reproduced_count,
+            "reproduced_pct": reproduced_pct,
+            "mean_compliance": mean_compliance,
+            "clean_pipeline_pct": clean_pct,
+            "avg_delta_pp": avg_delta,
+        }
+    }
+
+
+@app.get("/experiments/{eid}/radar")
+def get_experiment_radar(eid: str):
+    """Retrieve the 6-axis scientific integrity radar for an experiment."""
+    pid, proj, exp = get_exp(eid)
+    return robustness_radar.compute_radar_profile(proj, exp)
+
+
+@app.post("/experiments/{eid}/radar/stress-test")
+def stress_test_radar(
+    eid: str,
+    payload: dict = Body(...)
+):
+    """Dynamically simulate hyperparameter perturbation stress on the integrity radar."""
+    pid, proj, exp = get_exp(eid)
+    lr_drift = float(payload.get("lr_drift", 0.0))
+    batch_scale = float(payload.get("batch_scale", 1.0))
+    seed_noise = float(payload.get("seed_noise", 0.0))
+    return robustness_radar.compute_radar_profile(
+        proj, exp, lr_drift=lr_drift, batch_scale=batch_scale, seed_noise=seed_noise
+    )
+
+
+@app.get("/projects/{pid}/radar")
+def get_project_radar(pid: str, experiment_id: str | None = None):
+    """Retrieve radar for the latest experiment of a project."""
+    proj = load(pid)
+    exps = proj.get("experiments", {})
+    if not exps:
+        raise HTTPException(400, "Project has no experiments")
+    exp = exps[experiment_id] if experiment_id and experiment_id in exps else max(exps.values(), key=lambda e: e.get("version", 1))
+    return robustness_radar.compute_radar_profile(proj, exp)
 
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import SeedChart from '../components/SeedChart'
+import IntegrityRadar from '../components/IntegrityRadar'
 import { StatusPill } from '../components/ProvenanceBadge'
 import { useProject } from './ProjectLayout'
 import { ShieldCheck, AlertCircle, Info, CheckCircle2, TrendingUp, Sliders, Check, X } from 'lucide-react'
@@ -106,6 +107,9 @@ export default function Verify() {
           </div>
         </div>
       </div>
+
+      {/* 6-Axis Scientific Integrity Radar & Cherry-Picking Stress Test */}
+      <IntegrityRadar eid={eid} />
 
       {/* Verification Criteria Ledger */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
