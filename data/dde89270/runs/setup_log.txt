@@ -1,0 +1,30 @@
+Collecting scikit-learn (from -r /Users/vashninadar/Downloads/crisisgrid/data/dde89270/repo/requirements.txt (line 1))
+  Downloading scikit_learn-1.9.1-cp314-cp314-macosx_12_0_arm64.whl.metadata (9.3 kB)
+Collecting numpy (from -r /Users/vashninadar/Downloads/crisisgrid/data/dde89270/repo/requirements.txt (line 2))
+  Downloading numpy-2.5.3-cp314-cp314-macosx_14_0_arm64.whl.metadata (6.6 kB)
+Collecting scipy>=1.10.0 (from scikit-learn->-r /Users/vashninadar/Downloads/crisisgrid/data/dde89270/repo/requirements.txt (line 1))
+  Downloading scipy-1.18.1-cp314-cp314-macosx_14_0_arm64.whl.metadata (62 kB)
+Collecting joblib>=1.4.0 (from scikit-learn->-r /Users/vashninadar/Downloads/crisisgrid/data/dde89270/repo/requirements.txt (line 1))
+  Downloading joblib-1.6.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting narwhals>=2.0.1 (from scikit-learn->-r /Users/vashninadar/Downloads/crisisgrid/data/dde89270/repo/requirements.txt (line 1))
+  Downloading narwhals-2.27.1-py3-none-any.whl.metadata (15 kB)
+Collecting threadpoolctl>=3.5.0 (from scikit-learn->-r /Users/vashninadar/Downloads/crisisgrid/data/dde89270/repo/requirements.txt (line 1))
+  Downloading threadpoolctl-3.7.0-py3-none-any.whl.metadata (24 kB)
+Collecting cloudpickle>=3.0 (from joblib>=1.4.0->scikit-learn->-r /Users/vashninadar/Downloads/crisisgrid/data/dde89270/repo/requirements.txt (line 1))
+  Downloading cloudpickle-3.1.2-py3-none-any.whl.metadata (7.1 kB)
+Downloading scikit_learn-1.9.1-cp314-cp314-macosx_12_0_arm64.whl (8.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.3/8.3 MB 2.3 MB/s  0:00:03
+Downloading numpy-2.5.3-cp314-cp314-macosx_14_0_arm64.whl (5.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.4/5.4 MB 2.9 MB/s  0:00:01
+Downloading joblib-1.6.0-py3-none-any.whl (306 kB)
+Downloading cloudpickle-3.1.2-py3-none-any.whl (22 kB)
+Downloading narwhals-2.27.1-py3-none-any.whl (483 kB)
+Downloading scipy-1.18.1-cp314-cp314-macosx_14_0_arm64.whl (20.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 20.5/20.5 MB 3.2 MB/s  0:00:06
+Downloading threadpoolctl-3.7.0-py3-none-any.whl (26 kB)
+Installing collected packages: threadpoolctl, numpy, narwhals, cloudpickle, scipy, joblib, scikit-learn
+
+Successfully installed cloudpickle-3.1.2 joblib-1.6.0 narwhals-2.27.1 numpy-2.5.3 scikit-learn-1.9.1 scipy-1.18.1 threadpoolctl-3.7.0
+
+[notice] A new release of pip is available: 26.1 -> 26.2.1
+[notice] To update, run: /Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/venv/bin/python -m pip install --upgrade pip

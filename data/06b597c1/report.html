@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CrisisGrid Report</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#222}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:14px}
+th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px solid #e0a800}
+.tag{padding:2px 6px;border-radius:4px;background:#eee}
+</style></head><body>
+<h1>Reproducibility Report: My reproduction</h1>
+
+<h2>1. Claim</h2>
+<p>top-1 error = 19.8% <br><small>p.4: mixup α = 0.4 | 90 | 19.8 | 4.9</small></p>
+<h2>2. Extracted methodology</h2>
+<table><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Reference</th></tr>
+<tr><td>alpha</td><td>0.4</td><td><span class="tag">paper</span></td><td>p.4: mixup α = 0.4</td></tr><tr><td>batch_size</td><td>128</td><td><span class="tag">code</span></td><td>example/train.py:24</td></tr><tr><td>dropout</td><td>0.0</td><td><span class="tag">code</span></td><td>example/train.py:26</td></tr><tr><td>epochs</td><td>1</td><td><span class="tag">code</span></td><td>example/train.py:27</td></tr><tr><td>label_smoothing</td><td>0.1</td><td><span class="tag">code</span></td><td>example/train.py:28</td></tr><tr><td>learning_rate</td><td>0.1</td><td><span class="tag">code</span></td><td>example/train.py:29</td></tr><tr><td>max_depth</td><td>16</td><td><span class="tag">code</span></td><td>example/train.py:25</td></tr><tr><td>momentum</td><td>0.9</td><td><span class="tag">code</span></td><td>example/train.py:30</td></tr><tr><td>rho</td><td>2.0</td><td><span class="tag">code</span></td><td>example/train.py:32</td></tr><tr><td>seed</td><td>42</td><td><span class="tag">code</span></td><td>example/train.py:38</td></tr><tr><td>threads</td><td>0</td><td><span class="tag">code</span></td><td>example/train.py:31</td></tr><tr><td>weight_decay</td><td>0.0005</td><td><span class="tag">code</span></td><td>example/train.py:33</td></tr><tr><td>width_factor</td><td>1</td><td><span class="tag">code</span></td><td>example/train.py:34</td></tr></table>
+<p class="warn"><b>Scanner warnings</b></p><ul><li>No --seed argparse flag: all seeds will run identically, so seed variance cannot be measured.</li></ul>
+<h2>3. Paper vs. code findings</h2>
+<table><tr><th>Param</th><th>Paper</th><th>Code</th><th>Status</th><th>Severity</th></tr>
+<tr><td>alpha</td><td>0.4</td><td>None</td><td>ONLY_IN_PAPER</td><td>medium</td></tr><tr><td>batch_size</td><td>1024</td><td>128</td><td>MISMATCH</td><td>high</td></tr><tr><td>dropout</td><td>None</td><td>0.0</td><td>MISSING</td><td>high</td></tr><tr><td>epochs</td><td>90</td><td>1</td><td>MISMATCH</td><td>high</td></tr><tr><td>label_smoothing</td><td>None</td><td>0.1</td><td>MISSING</td><td>high</td></tr><tr><td>learning_rate</td><td>None</td><td>0.1</td><td>MISSING</td><td>high</td></tr><tr><td>max_depth</td><td>None</td><td>16</td><td>MISSING</td><td>high</td></tr><tr><td>momentum</td><td>None</td><td>0.9</td><td>MISSING</td><td>high</td></tr><tr><td>rho</td><td>None</td><td>2.0</td><td>MISSING</td><td>high</td></tr><tr><td>seed</td><td>None</td><td>42</td><td>MISSING</td><td>high</td></tr><tr><td>threads</td><td>None</td><td>0</td><td>MISSING</td><td>high</td></tr><tr><td>weight_decay</td><td>None</td><td>0.0005</td><td>MISSING</td><td>high</td></tr><tr><td>width_factor</td><td>None</td><td>1</td><td>MISSING</td><td>high</td></tr></table>
+<h2>4. Environment / manifest</h2>
+<table><tr><th>Seed</th><th>Status</th><th>Isolation</th><th>Config hash</th><th>Commit</th><th>Python</th></tr>
+<tr><td>0</td><td>done</td><td>reduced isolation</td><td>78ed7b9cb5d4</td><td>3c3afdbd71cff2462ec91c734b3d1170bd0f3707</td><td>3.14.4</td></tr><tr><td>1</td><td>done</td><td>reduced isolation</td><td>78ed7b9cb5d4</td><td>3c3afdbd71cff2462ec91c734b3d1170bd0f3707</td><td>3.14.4</td></tr><tr><td>2</td><td>done</td><td>reduced isolation</td><td>78ed7b9cb5d4</td><td>3c3afdbd71cff2462ec91c734b3d1170bd0f3707</td><td>3.14.4</td></tr></table>
+<h2>5. Results</h2>
+
+<p>Published: 19.8% &middot; Reproduced mean: 85.94% (std 0.00, range 85.94-85.94, n=3)<br>
+Diff: +66.14 pp &middot; Tolerance: 1.0 pp &middot; <b>NOT_REPRODUCED</b><br><small>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</small></p>
+
+<h2>6. Limitations</h2>
+<ul><li>Matching a headline metric does not prove the whole experiment was reproduced.</li>
+<li>Seeds, hardware, and library versions can change results.</li>
+<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li></ul>
+<h2>7. Evidence ledger</h2>
+<table><tr><th>Finding</th><th>Evidence</th><th>Type</th></tr>
+<tr><td>alpha: ONLY_IN_PAPER</td><td>paper=p.4: mixup α = 0.4 | code=-</td><td>paper+code</td></tr><tr><td>batch_size: MISMATCH</td><td>paper=p.5: with a minibatch size of 1,024. | code=example/train.py:24</td><td>paper+code</td></tr><tr><td>dropout: MISSING</td><td>paper=- | code=example/train.py:26</td><td>paper+code</td></tr><tr><td>epochs: MISMATCH</td><td>paper=p.4: mixup α = 0.4 | 90 | 20.7 | 5.3 | code=example/train.py:27</td><td>paper+code</td></tr><tr><td>label_smoothing: MISSING</td><td>paper=- | code=example/train.py:28</td><td>paper+code</td></tr><tr><td>learning_rate: MISSING</td><td>paper=- | code=example/train.py:29</td><td>paper+code</td></tr><tr><td>max_depth: MISSING</td><td>paper=- | code=example/train.py:25</td><td>paper+code</td></tr><tr><td>momentum: MISSING</td><td>paper=- | code=example/train.py:30</td><td>paper+code</td></tr><tr><td>rho: MISSING</td><td>paper=- | code=example/train.py:32</td><td>paper+code</td></tr><tr><td>seed: MISSING</td><td>paper=- | code=example/train.py:38</td><td>paper+code</td></tr><tr><td>threads: MISSING</td><td>paper=- | code=example/train.py:31</td><td>paper+code</td></tr><tr><td>weight_decay: MISSING</td><td>paper=- | code=example/train.py:33</td><td>paper+code</td></tr><tr><td>width_factor: MISSING</td><td>paper=- | code=example/train.py:34</td><td>paper+code</td></tr><tr><td>Reproduced mean 85.94%</td><td>3 seeds run</td><td>measured</td></tr><tr><td>Diff +66.14 pp -&gt; NOT_REPRODUCED</td><td>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</td><td>calculated</td></tr></table>
+</body></html>

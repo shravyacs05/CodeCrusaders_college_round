@@ -1,0 +1,49 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CrisisGrid Report</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#222}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:14px}
+th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px solid #e0a800}
+.tag{padding:2px 6px;border-radius:4px;background:#eee}
+</style></head><body>
+<h1>Reproducibility Report: My reproduction</h1>
+
+<h2>1. Claim</h2>
+<p>accuracy = 85.9% <br><small>p.7: FT-T
+0.459 0.859 0.391 0.732 0.729 0.960 0.8982 8.855 0.970 0.756
+0.746 1.8 (1.2)</small></p>
+<h2>2. Extracted methodology</h2>
+<table><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Reference</th></tr>
+<tr><td>batch_size</td><td>256</td><td><span class="tag">paper</span></td><td>p.14: Adult
+AD
+26048
+6513
+16281
+6
+8
+Binclass
+256</td></tr><tr><td>epochs</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>learning_rate</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>optimizer</td><td>AdamW</td><td><span class="tag">paper</span></td><td>p.6: For all other algorithms, we use the AdamW optimizer (Loshchilov and Hutter, 2019).</td></tr></table>
+
+<h2>3. Paper vs. code findings</h2>
+<table><tr><th>Param</th><th>Paper</th><th>Code</th><th>Status</th><th>Severity</th></tr>
+<tr><td>batch_size</td><td>256</td><td>None</td><td>ONLY_IN_PAPER</td><td>medium</td></tr><tr><td>optimizer</td><td>AdamW</td><td>None</td><td>ONLY_IN_PAPER</td><td>medium</td></tr></table>
+<h2>4. Environment / manifest</h2>
+<p>No runs yet.</p>
+<h2>5. Results</h2>
+<p><b>BLOCKED</b>: no successful runs with metrics</p>
+<h2>6. Limitations</h2>
+<ul><li>Matching a headline metric does not prove the whole experiment was reproduced.</li>
+<li>Seeds, hardware, and library versions can change results.</li>
+<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li></ul>
+<h2>7. Evidence ledger</h2>
+<table><tr><th>Finding</th><th>Evidence</th><th>Type</th></tr>
+<tr><td>batch_size: ONLY_IN_PAPER</td><td>paper=p.14: Adult
+AD
+26048
+6513
+16281
+6
+8
+Binclass
+256 | code=-</td><td>paper+code</td></tr><tr><td>optimizer: ONLY_IN_PAPER</td><td>paper=p.6: For all other algorithms, we use the AdamW optimizer (Loshchilov and Hutter, 2019). | code=-</td><td>paper+code</td></tr></table>
+</body></html>

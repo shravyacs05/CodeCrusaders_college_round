@@ -1,0 +1,137 @@
+{
+  "id": "0baffbdf",
+  "name": "My reproduction",
+  "repo_url": "https://github.com/yandex-research/rtdl",
+  "paper_path": "/Users/vashninadar/Downloads/crisisgrid/data/0baffbdf/paper.pdf",
+  "status": "analyzed",
+  "is_demo": false,
+  "experiments": {
+    "8dc7721a": {
+      "id": "8dc7721a",
+      "parent_id": null,
+      "version": 1,
+      "spec": {
+        "claim": {
+          "metric": "accuracy",
+          "value": 85.9,
+          "ref": "p.7: FT-T\n0.459 0.859 0.391 0.732 0.729 0.960 0.8982 8.855 0.970 0.756\n0.746 1.8 (1.2)",
+          "percent": true
+        },
+        "params": {
+          "batch_size": {
+            "value": 256,
+            "source": "paper",
+            "ref": "p.14: Adult\nAD\n26048\n6513\n16281\n6\n8\nBinclass\n256",
+            "verified": true,
+            "injectable": false,
+            "kind": null
+          },
+          "epochs": {
+            "value": null,
+            "source": "missing",
+            "ref": null,
+            "verified": false,
+            "injectable": false,
+            "kind": null
+          },
+          "learning_rate": {
+            "value": null,
+            "source": "missing",
+            "ref": null,
+            "verified": false,
+            "injectable": false,
+            "kind": null
+          },
+          "optimizer": {
+            "value": "AdamW",
+            "source": "paper",
+            "ref": "p.6: For all other algorithms, we use the AdamW optimizer (Loshchilov and Hutter, 2019).",
+            "verified": true,
+            "injectable": false,
+            "kind": null
+          }
+        },
+        "run_command_template": null,
+        "blocked": "No train*.py or main.py found",
+        "warnings": []
+      },
+      "diff_from_parent": [],
+      "config_hash": "9902d904fe50"
+    }
+  },
+  "runs": {},
+  "paper": {
+    "fields": {
+      "batch_size": {
+        "value": 256,
+        "page": 14,
+        "quote": "Adult\nAD\n26048\n6513\n16281\n6\n8\nBinclass\n256",
+        "source": "paper",
+        "verified": true
+      },
+      "epochs": {
+        "value": null,
+        "page": null,
+        "quote": null,
+        "source": "missing",
+        "verified": false
+      },
+      "learning_rate": {
+        "value": null,
+        "page": null,
+        "quote": null,
+        "source": "missing",
+        "verified": false
+      },
+      "optimizer": {
+        "value": "AdamW",
+        "page": 6,
+        "quote": "For all other algorithms, we use the AdamW optimizer (Loshchilov and Hutter, 2019).",
+        "source": "paper",
+        "verified": true
+      },
+      "_claim": {
+        "metric": "accuracy",
+        "value": 85.9,
+        "page": 7,
+        "quote": "FT-T\n0.459 0.859 0.391 0.732 0.729 0.960 0.8982 8.855 0.970 0.756\n0.746 1.8 (1.2)",
+        "percent": true,
+        "verified": true
+      }
+    },
+    "flags": {},
+    "n_pages": 25,
+    "method": "llm",
+    "note": null
+  },
+  "scan": {
+    "params": {},
+    "entrypoint": null,
+    "run_template": null,
+    "blocked": "No train*.py or main.py found",
+    "warnings": []
+  },
+  "findings": [
+    {
+      "param": "batch_size",
+      "paper_value": 256,
+      "code_value": null,
+      "status": "ONLY_IN_PAPER",
+      "severity": "medium",
+      "paper_ref": "p.14: Adult\nAD\n26048\n6513\n16281\n6\n8\nBinclass\n256",
+      "code_ref": null,
+      "explanation": "The paper specifies a batch size of 256, but this is not defined in the code."
+    },
+    {
+      "param": "optimizer",
+      "paper_value": "AdamW",
+      "code_value": null,
+      "status": "ONLY_IN_PAPER",
+      "severity": "medium",
+      "paper_ref": "p.6: For all other algorithms, we use the AdamW optimizer (Loshchilov and Hutter, 2019).",
+      "code_ref": null,
+      "explanation": "The paper specifies using the AdamW optimizer, but it is not implemented or set in the code."
+    }
+  ],
+  "commit": "4ca77be57aae445648df63e9ef3a5566b1f0a835"
+}

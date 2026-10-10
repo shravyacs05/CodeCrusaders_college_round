@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+pydantic>=2
+pymupdf
+gitpython
+jinja2
+pytest
+scikit-learn
+numpy
+reportlab
+pyyaml
+python-dotenv

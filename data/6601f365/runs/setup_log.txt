@@ -1,0 +1,13 @@
+Looking in links: https://download.pytorch.org/whl/torch_stable.html
+ERROR: Could not find a version that satisfies the requirement torch==1.12.1+cpu (from versions: 2.9.0, 2.9.1, 2.10.0, 2.11.0, 2.12.0, 2.12.1, 2.13.0, 2.14.0, 2.14.1)
+
+[notice] A new release of pip is available: 26.1 -> 26.2.1
+[notice] To update, run: /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/venv/bin/python -m pip install --upgrade pip
+ERROR: No matching distribution found for torch==1.12.1+cpu
+
+--- Retried with platform-agnostic dependencies ---
+ERROR: Could not find a version that satisfies the requirement torch==1.12.1 (from versions: 2.9.0, 2.9.1, 2.10.0, 2.11.0, 2.12.0, 2.12.1, 2.13.0, 2.14.0, 2.14.1)
+
+[notice] A new release of pip is available: 26.1 -> 26.2.1
+[notice] To update, run: /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/venv/bin/python -m pip install --upgrade pip
+ERROR: No matching distribution found for torch==1.12.1

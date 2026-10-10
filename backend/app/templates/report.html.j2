@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CrisisGrid Report</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#222}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:14px}
+th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px solid #e0a800}
+.tag{padding:2px 6px;border-radius:4px;background:#eee}
+</style></head><body>
+<h1>Reproducibility Report: {{ project_name }}</h1>
+{% if is_demo %}<p class="warn"><b>DEMO FIXTURE.</b> Synthetic paper and repo. This is not an independent reproduction of a published paper.</p>{% endif %}
+<h2>1. Claim</h2>
+<p>{{ claim.metric }} = {{ claim.value }}{{ '%' if claim.percent is not defined or claim.percent else '' }} <br><small>{{ claim.ref }}</small></p>
+<h2>2. Extracted methodology</h2>
+<table><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Reference</th></tr>
+{% for k, v in params.items() %}<tr><td>{{ k }}</td><td>{{ v.value if v.value is not none else 'MISSING' }}</td><td><span class="tag">{{ v.source }}</span></td><td>{{ v.ref or '' }}</td></tr>{% endfor %}</table>
+{% if warnings %}<p class="warn"><b>Scanner warnings</b></p><ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>{% endif %}
+<h2>3. Paper vs. code findings</h2>
+<table><tr><th>Param</th><th>Paper</th><th>Code</th><th>Status</th><th>Severity</th></tr>
+{% for f in findings %}<tr><td>{{ f.param }}</td><td>{{ f.paper_value }}</td><td>{{ f.code_value }}</td><td>{{ f.status }}</td><td>{{ f.severity }}</td></tr>{% endfor %}</table>
+<h2>4. Environment / manifest</h2>
+{% if runs %}<table><tr><th>Seed</th><th>Status</th><th>Isolation</th><th>Config hash</th><th>Commit</th><th>Python</th></tr>
+{% for r in runs %}<tr><td>{{ r.seed }}</td><td>{{ r.status }}</td><td>{{ r.manifest.isolation }}</td><td>{{ r.manifest.config_hash }}</td><td>{{ r.manifest.repo_commit }}</td><td>{{ r.manifest.python }}</td></tr>{% endfor %}</table>{% else %}<p>No runs yet.</p>{% endif %}
+<h2>5. Results</h2>
+{% if verification and verification.status != 'BLOCKED' %}
+<p>Published: {{ verification.published }}{{ '%' if claim.percent is not defined or claim.percent else '' }} &middot; Reproduced mean: {{ '%.2f'|format(verification.reproduced_mean) }}{{ '%' if claim.percent is not defined or claim.percent else '' }} (std {{ '%.2f'|format(verification.std) }}, range {{ '%.2f'|format(verification.min) }}-{{ '%.2f'|format(verification.max) }}, n={{ verification.n }})<br>
+Diff: {{ '%+.2f'|format(verification.diff_pp) }} pp &middot; Tolerance: {{ verification.tolerance_pp }} pp &middot; <b>{{ verification.status }}</b><br><small>{{ verification.rule }}</small></p>
+{% else %}<p><b>BLOCKED</b>{% if verification %}: {{ verification.reason }}{% endif %}</p>{% endif %}
+<h2>6. Limitations</h2>
+<ul><li>Matching a headline metric does not prove the whole experiment was reproduced.</li>
+<li>Seeds, hardware, and library versions can change results.</li>
+<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li></ul>
+<h2>7. Evidence ledger</h2>
+<table><tr><th>Finding</th><th>Evidence</th><th>Type</th></tr>
+{% for e in ledger %}<tr><td>{{ e.item }}</td><td>{{ e.evidence }}</td><td>{{ e.type }}</td></tr>{% endfor %}</table>
+</body></html>

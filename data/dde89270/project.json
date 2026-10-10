@@ -1,0 +1,290 @@
+{
+  "id": "dde89270",
+  "name": "My reproduction",
+  "repo_url": "/Users/vashninadar/Downloads/crisisgrid/fixtures/demo_repo",
+  "paper_path": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/paper.pdf",
+  "status": "analyzed",
+  "is_demo": false,
+  "experiments": {
+    "953debfc": {
+      "id": "953debfc",
+      "parent_id": null,
+      "version": 1,
+      "spec": {
+        "claim": {
+          "metric": "accuracy",
+          "value": 96.5,
+          "ref": "p.1: Results Our model reaches an accuracy of 96.5% on the held-out test set."
+        },
+        "params": {
+          "max_depth": {
+            "value": 5,
+            "source": "code",
+            "ref": "train.py:13",
+            "verified": true
+          },
+          "n_estimators": {
+            "value": 50,
+            "source": "code",
+            "ref": "train.py:12",
+            "verified": true
+          },
+          "seed": {
+            "value": 0,
+            "source": "code",
+            "ref": "train.py:15",
+            "verified": true
+          },
+          "test_size": {
+            "value": 0.2,
+            "source": "code",
+            "ref": "train.py:14",
+            "verified": true
+          }
+        },
+        "run_command_template": "python train.py --n_estimators {n_estimators} --max_depth {max_depth} --test_size {test_size} --seed {seed} --out {out}",
+        "blocked": null
+      },
+      "diff_from_parent": [],
+      "config_hash": "0272368f5842"
+    }
+  },
+  "runs": {
+    "953debfc": {
+      "status": {
+        "nodes": {
+          "Dataset": "done",
+          "Preprocessing": "pending",
+          "Model": "pending",
+          "Training": "done",
+          "Evaluation": "done",
+          "Compare": "pending"
+        },
+        "seeds_done": 5,
+        "seeds_total": 5,
+        "state": "finished"
+      },
+      "results": [
+        {
+          "seed": 0,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9649122807017544
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/log_seed0.txt",
+          "manifest": {
+            "experiment_id": "953debfc",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 0,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/venv/bin/python train.py --n_estimators 50 --max_depth 5 --test_size 0.2 --seed 0 --out /Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/metrics_seed0.json",
+            "started_at": 1791632374.9850922,
+            "ended_at": 1791632375.84819,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 1,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9649122807017544
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/log_seed1.txt",
+          "manifest": {
+            "experiment_id": "953debfc",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 1,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/venv/bin/python train.py --n_estimators 50 --max_depth 5 --test_size 0.2 --seed 1 --out /Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/metrics_seed1.json",
+            "started_at": 1791632375.848372,
+            "ended_at": 1791632376.481785,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 2,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9473684210526315
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/log_seed2.txt",
+          "manifest": {
+            "experiment_id": "953debfc",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 2,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/venv/bin/python train.py --n_estimators 50 --max_depth 5 --test_size 0.2 --seed 2 --out /Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/metrics_seed2.json",
+            "started_at": 1791632376.482024,
+            "ended_at": 1791632377.122886,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 3,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9385964912280702
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/log_seed3.txt",
+          "manifest": {
+            "experiment_id": "953debfc",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 3,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/venv/bin/python train.py --n_estimators 50 --max_depth 5 --test_size 0.2 --seed 3 --out /Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/metrics_seed3.json",
+            "started_at": 1791632377.123105,
+            "ended_at": 1791632377.7590668,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 4,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9298245614035088
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/log_seed4.txt",
+          "manifest": {
+            "experiment_id": "953debfc",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 4,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/venv/bin/python train.py --n_estimators 50 --max_depth 5 --test_size 0.2 --seed 4 --out /Users/vashninadar/Downloads/crisisgrid/data/dde89270/runs/953debfc/metrics_seed4.json",
+            "started_at": 1791632377.759423,
+            "ended_at": 1791632378.3982148,
+            "exit_status": 0
+          }
+        }
+      ]
+    }
+  },
+  "paper": {
+    "fields": {
+      "n_estimators": {
+        "value": 100,
+        "page": 1,
+        "quote": "random forest classifier with 100 trees and max_depth of 5 on the Wis",
+        "source": "paper",
+        "verified": true
+      },
+      "max_depth": {
+        "value": 5,
+        "page": 1,
+        "quote": "classifier with 100 trees and max_depth of 5 on the Wisconsin breast cance",
+        "source": "paper",
+        "verified": true
+      },
+      "test_size": {
+        "value": 0.2,
+        "page": 1,
+        "quote": "east cancer dataset. We use a test_size of 0.2 for the split. 2. Results Our",
+        "source": "paper",
+        "verified": true
+      },
+      "seed": {
+        "value": null,
+        "page": null,
+        "quote": null,
+        "source": "missing",
+        "verified": false
+      },
+      "_claim": {
+        "metric": "accuracy",
+        "value": 96.5,
+        "page": 1,
+        "quote": "Results Our model reaches an accuracy of 96.5% on the held-out test set.",
+        "verified": true
+      }
+    },
+    "flags": {},
+    "n_pages": 1,
+    "method": "regex",
+    "note": null
+  },
+  "scan": {
+    "params": {
+      "n_estimators": {
+        "value": 50,
+        "file": "train.py",
+        "line": 12
+      },
+      "max_depth": {
+        "value": 5,
+        "file": "train.py",
+        "line": 13
+      },
+      "test_size": {
+        "value": 0.2,
+        "file": "train.py",
+        "line": 14
+      },
+      "seed": {
+        "value": 0,
+        "file": "train.py",
+        "line": 15
+      },
+      "out": {
+        "value": "metrics.json",
+        "file": "train.py",
+        "line": 16
+      }
+    },
+    "entrypoint": "train.py",
+    "run_template": "python train.py --n_estimators {n_estimators} --max_depth {max_depth} --test_size {test_size} --seed {seed} --out {out}",
+    "blocked": null
+  },
+  "findings": [
+    {
+      "param": "max_depth",
+      "paper_value": 5,
+      "code_value": 5,
+      "status": "MATCH",
+      "severity": "none",
+      "paper_ref": "p.1: classifier with 100 trees and max_depth of 5 on the Wisconsin breast cance",
+      "code_ref": "train.py:13"
+    },
+    {
+      "param": "n_estimators",
+      "paper_value": 100,
+      "code_value": 50,
+      "status": "MISMATCH",
+      "severity": "high",
+      "paper_ref": "p.1: random forest classifier with 100 trees and max_depth of 5 on the Wis",
+      "code_ref": "train.py:12"
+    },
+    {
+      "param": "seed",
+      "paper_value": null,
+      "code_value": 0,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "train.py:15"
+    },
+    {
+      "param": "test_size",
+      "paper_value": 0.2,
+      "code_value": 0.2,
+      "status": "MATCH",
+      "severity": "none",
+      "paper_ref": "p.1: east cancer dataset. We use a test_size of 0.2 for the split. 2. Results Our",
+      "code_ref": "train.py:14"
+    }
+  ],
+  "commit": "local-copy"
+}

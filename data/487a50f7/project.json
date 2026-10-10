@@ -1,0 +1,268 @@
+{
+  "id": "487a50f7",
+  "name": "Demo 1: Random Forest on Breast Cancer (Accuracy)",
+  "repo_url": "/Users/vashninadar/Downloads/crisisgrid/fixtures/demo_repo",
+  "paper_path": "/Users/vashninadar/Downloads/crisisgrid/data/487a50f7/paper.pdf",
+  "status": "analyzed",
+  "is_demo": true,
+  "commit": "demo-seed",
+  "paper": {
+    "fields": {
+      "n_estimators": {
+        "value": 100,
+        "page": 1,
+        "quote": "100 trees",
+        "source": "paper",
+        "verified": true
+      },
+      "max_depth": {
+        "value": 5,
+        "page": 1,
+        "quote": "max_depth of 5",
+        "source": "paper",
+        "verified": true
+      },
+      "test_size": {
+        "value": 0.2,
+        "page": 1,
+        "quote": "test_size of 0.2",
+        "source": "paper",
+        "verified": true
+      },
+      "_claim": {
+        "metric": "accuracy",
+        "value": 96.5,
+        "page": 1,
+        "quote": "Our model reaches an accuracy of 96.5% on the held-out test set.",
+        "percent": true,
+        "verified": true
+      }
+    },
+    "flags": {},
+    "n_pages": 1,
+    "method": "llm",
+    "note": null
+  },
+  "scan": {
+    "params": {
+      "n_estimators": {
+        "kind": "argparse",
+        "name": "n_estimators",
+        "value": 50,
+        "file": "train.py",
+        "line": 12,
+        "flag": "n_estimators",
+        "injectable": true
+      },
+      "max_depth": {
+        "kind": "argparse",
+        "name": "max_depth",
+        "value": 5,
+        "file": "train.py",
+        "line": 13,
+        "flag": "max_depth",
+        "injectable": true
+      },
+      "test_size": {
+        "kind": "argparse",
+        "name": "test_size",
+        "value": 0.2,
+        "file": "train.py",
+        "line": 14,
+        "flag": "test_size",
+        "injectable": true
+      },
+      "seed": {
+        "kind": "argparse",
+        "name": "seed",
+        "value": 0,
+        "file": "train.py",
+        "line": 15,
+        "flag": "seed",
+        "injectable": true
+      }
+    },
+    "entrypoint": "train.py",
+    "run_template": "python train.py --n_estimators {n_estimators} --max_depth {max_depth} --test_size {test_size} --seed {seed} --out {out}",
+    "blocked": null,
+    "warnings": []
+  },
+  "findings": [
+    {
+      "param": "max_depth",
+      "paper_value": 5,
+      "code_value": 5,
+      "status": "MATCH",
+      "severity": "none",
+      "paper_ref": "p.1: max_depth of 5",
+      "code_ref": "train.py:13",
+      "explanation": "Paper value (5) matches code default (5)."
+    },
+    {
+      "param": "n_estimators",
+      "paper_value": 100,
+      "code_value": 50,
+      "status": "MISMATCH",
+      "severity": "high",
+      "paper_ref": "p.1: 100 trees",
+      "code_ref": "train.py:12",
+      "explanation": "Paper specifies n_estimators=100 (p.1: 100 trees), but code default is 50 (train.py:12)."
+    },
+    {
+      "param": "seed",
+      "paper_value": null,
+      "code_value": 0,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "train.py:15",
+      "explanation": "Code sets seed=0 (train.py:15), but parameter is omitted from the paper."
+    },
+    {
+      "param": "test_size",
+      "paper_value": 0.2,
+      "code_value": 0.2,
+      "status": "MATCH",
+      "severity": "none",
+      "paper_ref": "p.1: test_size of 0.2",
+      "code_ref": "train.py:14",
+      "explanation": "Paper value (0.2) matches code default (0.2)."
+    }
+  ],
+  "experiments": {
+    "b00222b8": {
+      "id": "b00222b8",
+      "parent_id": null,
+      "version": 1,
+      "spec": {
+        "claim": {
+          "metric": "accuracy",
+          "value": 96.5,
+          "ref": "p.1: Our model reaches an accuracy of 96.5% on the held-out test set.",
+          "percent": true
+        },
+        "params": {
+          "max_depth": {
+            "value": 5,
+            "source": "code",
+            "ref": "train.py:13",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "n_estimators": {
+            "value": 50,
+            "source": "code",
+            "ref": "train.py:12",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "seed": {
+            "value": 0,
+            "source": "code",
+            "ref": "train.py:15",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "test_size": {
+            "value": 0.2,
+            "source": "code",
+            "ref": "train.py:14",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          }
+        },
+        "run_command_template": "python train.py --n_estimators {n_estimators} --max_depth {max_depth} --test_size {test_size} --seed {seed} --out {out}",
+        "blocked": null,
+        "warnings": []
+      },
+      "diff_from_parent": [],
+      "config_hash": "0272368f5842"
+    }
+  },
+  "runs": {
+    "b00222b8": {
+      "status": {
+        "nodes": {
+          "Dataset": "done",
+          "Preprocessing": "done",
+          "Model": "done",
+          "Training": "done",
+          "Evaluation": "done",
+          "Compare": "done"
+        },
+        "seeds_done": 3,
+        "seeds_total": 3,
+        "state": "finished"
+      },
+      "results": [
+        {
+          "seed": 0,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9649
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/487a50f7/log_seed0.txt",
+          "manifest": {
+            "experiment_id": "b00222b8",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 0,
+            "isolation": "reduced isolation",
+            "python": "3.11.0",
+            "command": "python train.py --seed 0",
+            "started_at": 1728560000.0,
+            "ended_at": 1728560002.0,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 1,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9649
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/487a50f7/log_seed1.txt",
+          "manifest": {
+            "experiment_id": "b00222b8",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 1,
+            "isolation": "reduced isolation",
+            "python": "3.11.0",
+            "command": "python train.py --seed 1",
+            "started_at": 1728560000.0,
+            "ended_at": 1728560002.0,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 2,
+          "status": "done",
+          "metrics": {
+            "accuracy": 0.9474
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/487a50f7/log_seed2.txt",
+          "manifest": {
+            "experiment_id": "b00222b8",
+            "parent_id": null,
+            "repo_commit": "local-copy",
+            "config_hash": "0272368f5842",
+            "seed": 2,
+            "isolation": "reduced isolation",
+            "python": "3.11.0",
+            "command": "python train.py --seed 2",
+            "started_at": 1728560000.0,
+            "ended_at": 1728560002.0,
+            "exit_status": 0
+          }
+        }
+      ]
+    }
+  }
+}

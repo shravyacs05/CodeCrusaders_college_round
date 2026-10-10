@@ -1,0 +1,124 @@
+{
+  "id": "6601f365",
+  "name": "My reproduction",
+  "repo_url": "https://github.com/finisky/TextCNN",
+  "paper_path": "/Users/vashninadar/Downloads/crisisgrid/data/6601f365/paper.pdf",
+  "status": "analyzed",
+  "is_demo": false,
+  "experiments": {
+    "13fd1571": {
+      "id": "13fd1571",
+      "parent_id": null,
+      "version": 1,
+      "spec": {
+        "claim": {
+          "metric": "accuracy",
+          "value": 93.6,
+          "ref": "p.4: CNN-non-static | 81.5 | 48.0 | 87.2 | 93.4 | 93.6 | 84.3 | 89.5",
+          "percent": true
+        },
+        "params": {
+          "batch_size": {
+            "value": 50,
+            "source": "paper",
+            "ref": "p.3: For all datasets we use: recti\ufb01ed linear units, \ufb01lter windows (h) of 3, 4, 5 with 100 feature maps each, dropout rate (p) of 0.5, l2 constraint (s) of 3, and mini-batch size of 50.",
+            "verified": true,
+            "injectable": false,
+            "kind": null
+          },
+          "optimizer": {
+            "value": null,
+            "source": "missing",
+            "ref": null,
+            "verified": false,
+            "injectable": false,
+            "kind": null
+          }
+        },
+        "run_command_template": "python main.py --out {out}",
+        "blocked": null,
+        "warnings": [
+          "No --seed argparse flag: all seeds will run identically, so seed variance cannot be measured."
+        ]
+      },
+      "diff_from_parent": [],
+      "config_hash": "4458a7a82f8d"
+    }
+  },
+  "runs": {
+    "13fd1571": {
+      "status": {
+        "nodes": {
+          "Dataset": "failed",
+          "Preprocessing": "pending",
+          "Model": "pending",
+          "Training": "pending",
+          "Evaluation": "pending",
+          "Compare": "pending"
+        },
+        "seeds_done": 0,
+        "seeds_total": 3,
+        "state": "failed",
+        "failed_stage": "setup",
+        "error": "pip install failed (see setup_log.txt)"
+      },
+      "results": [],
+      "setup_log": "Looking in links: https://download.pytorch.org/whl/torch_stable.html\nERROR: Could not find a version that satisfies the requirement torch==1.12.1+cpu (from versions: 2.9.0, 2.9.1, 2.10.0, 2.11.0, 2.12.0, 2.12.1, 2.13.0, 2.14.0, 2.14.1)\n\n[notice] A new release of pip is available: 26.1 -> 26.2.1\n[notice] To update, run: /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/venv/bin/python -m pip install --upgrade pip\nERROR: No matching distribution found for torch==1.12.1+cpu\n\nSETUP FAILED: pip install failed (see setup_log.txt)"
+    }
+  },
+  "paper": {
+    "fields": {
+      "batch_size": {
+        "value": 50,
+        "page": 3,
+        "quote": "For all datasets we use: recti\ufb01ed linear units, \ufb01lter windows (h) of 3, 4, 5 with 100 feature maps each, dropout rate (p) of 0.5, l2 constraint (s) of 3, and mini-batch size of 50.",
+        "source": "paper",
+        "verified": true
+      },
+      "optimizer": {
+        "value": null,
+        "page": 3,
+        "quote": "Training is done through stochastic gradient descent over shuf\ufb02ed mini-batches with the Adadelta update rule (Zeiler, 2012).",
+        "source": "unverified",
+        "verified": false,
+        "claimed_value": "Adadelta"
+      },
+      "_claim": {
+        "metric": "accuracy",
+        "value": 93.6,
+        "page": 4,
+        "quote": "CNN-non-static | 81.5 | 48.0 | 87.2 | 93.4 | 93.6 | 84.3 | 89.5",
+        "percent": true,
+        "verified": true
+      }
+    },
+    "flags": {
+      "optimizer": "unverified_extraction"
+    },
+    "n_pages": 6,
+    "method": "llm",
+    "note": null
+  },
+  "scan": {
+    "params": {},
+    "entrypoint": "main.py",
+    "run_template": "python main.py --out {out}",
+    "blocked": null,
+    "warnings": [
+      "No --seed argparse flag: all seeds will run identically, so seed variance cannot be measured."
+    ]
+  },
+  "findings": [
+    {
+      "param": "batch_size",
+      "paper_value": 50,
+      "code_value": null,
+      "status": "ONLY_IN_PAPER",
+      "severity": "medium",
+      "paper_ref": "p.3: For all datasets we use: recti\ufb01ed linear units, \ufb01lter windows (h) of 3, 4, 5 with 100 feature maps each, dropout rate (p) of 0.5, l2 constraint (s) of 3, and mini-batch size of 50.",
+      "code_ref": null,
+      "explanation": "The paper specifies a batch size of 50, but this parameter is not found in the code."
+    }
+  ],
+  "commit": "e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb"
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CrisisGrid Report</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#222}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:14px}
+th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px solid #e0a800}
+.tag{padding:2px 6px;border-radius:4px;background:#eee}
+</style></head><body>
+<h1>Reproducibility Report: Demo 1: Random Forest on Breast Cancer (Accuracy)</h1>
+<p class="warn"><b>DEMO FIXTURE.</b> Synthetic paper and repo. This is not an independent reproduction of a published paper.</p>
+<h2>1. Claim</h2>
+<p>accuracy = 96.5% <br><small>p.1: Results Our model reaches an accuracy of 96.5% on the held-out test set.</small></p>
+<h2>2. Extracted methodology</h2>
+<table><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Reference</th></tr>
+<tr><td>batch_size</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>epochs</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>learning_rate</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>max_depth</td><td>5</td><td><span class="tag">code</span></td><td>train.py:13</td></tr><tr><td>n_estimators</td><td>50</td><td><span class="tag">code</span></td><td>train.py:12</td></tr><tr><td>seed</td><td>9</td><td><span class="tag">user</span></td><td>user edit</td></tr><tr><td>test_size</td><td>0.2</td><td><span class="tag">code</span></td><td>train.py:14</td></tr></table>
+
+<h2>3. Paper vs. code findings</h2>
+<table><tr><th>Param</th><th>Paper</th><th>Code</th><th>Status</th><th>Severity</th></tr>
+<tr><td>max_depth</td><td>5</td><td>5</td><td>MATCH</td><td>none</td></tr><tr><td>n_estimators</td><td>100</td><td>50</td><td>MISMATCH</td><td>high</td></tr><tr><td>seed</td><td>None</td><td>0</td><td>MISSING</td><td>high</td></tr><tr><td>test_size</td><td>0.2</td><td>0.2</td><td>MATCH</td><td>none</td></tr></table>
+<h2>4. Environment / manifest</h2>
+<table><tr><th>Seed</th><th>Status</th><th>Isolation</th><th>Config hash</th><th>Commit</th><th>Python</th></tr>
+<tr><td>0</td><td>done</td><td>reduced isolation</td><td>219701143776</td><td>demo-seed</td><td>3.14.4</td></tr><tr><td>1</td><td>done</td><td>reduced isolation</td><td>219701143776</td><td>demo-seed</td><td>3.14.4</td></tr><tr><td>2</td><td>done</td><td>reduced isolation</td><td>219701143776</td><td>demo-seed</td><td>3.14.4</td></tr></table>
+<h2>5. Results</h2>
+
+<p>Published: 96.5% &middot; Reproduced mean: 95.91% (std 1.01, range 94.74-96.49, n=3)<br>
+Diff: -0.59 pp &middot; Tolerance: 1.0 pp &middot; <b>REPRODUCED</b><br><small>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</small></p>
+
+<h2>6. Limitations</h2>
+<ul><li>Matching a headline metric does not prove the whole experiment was reproduced.</li>
+<li>Seeds, hardware, and library versions can change results.</li>
+<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li></ul>
+<h2>7. Evidence ledger</h2>
+<table><tr><th>Finding</th><th>Evidence</th><th>Type</th></tr>
+<tr><td>max_depth: MATCH</td><td>paper=p.1: classifier with 100 trees and max_depth of 5 on the Wisconsin breast cance | code=train.py:13</td><td>paper+code</td></tr><tr><td>n_estimators: MISMATCH</td><td>paper=p.1: random forest classifier with 100 trees and max_depth of 5 on the Wis | code=train.py:12</td><td>paper+code</td></tr><tr><td>seed: MISSING</td><td>paper=- | code=train.py:15</td><td>paper+code</td></tr><tr><td>test_size: MATCH</td><td>paper=p.1: east cancer dataset. We use a test_size of 0.2 for the split. 2. Results Our | code=train.py:14</td><td>paper+code</td></tr><tr><td>Reproduced mean 95.91%</td><td>3 seeds run</td><td>measured</td></tr><tr><td>Diff -0.59 pp -&gt; REPRODUCED</td><td>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</td><td>calculated</td></tr></table>
+</body></html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CrisisGrid Report</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#222}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:14px}
+th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px solid #e0a800}
+.tag{padding:2px 6px;border-radius:4px;background:#eee}
+</style></head><body>
+<h1>Reproducibility Report: Demo 2: SGD Classifier + Config (F1 Score)</h1>
+<p class="warn"><b>DEMO FIXTURE.</b> Synthetic paper and repo. This is not an independent reproduction of a published paper.</p>
+<h2>1. Claim</h2>
+<p>f1 = 95.0% <br><small>p.1: Results Our model reaches an F1 score of 95.0% on the held-out test set.</small></p>
+<h2>2. Extracted methodology</h2>
+<table><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Reference</th></tr>
+<tr><td>batch_size</td><td>64</td><td><span class="tag">code</span></td><td>config.yaml:1</td></tr><tr><td>epochs</td><td>20</td><td><span class="tag">code</span></td><td>main.py:18</td></tr><tr><td>learning_rate</td><td>0.01</td><td><span class="tag">code</span></td><td>main.py:17</td></tr><tr><td>max_depth</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>n_estimators</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>seed</td><td>0</td><td><span class="tag">code</span></td><td>main.py:25</td></tr><tr><td>test_size</td><td>0.25</td><td><span class="tag">code</span></td><td>main.py:13</td></tr></table>
+<p class="warn"><b>Scanner warnings</b></p><ul><li>&#39;seed&#39; has conflicting values in code: using constructor value 0 (main.py:25); others: 42 (main.py:14)</li><li>No --seed argparse flag: all seeds will run identically, so seed variance cannot be measured.</li></ul>
+<h2>3. Paper vs. code findings</h2>
+<table><tr><th>Param</th><th>Paper</th><th>Code</th><th>Status</th><th>Severity</th></tr>
+<tr><td>batch_size</td><td>32</td><td>64</td><td>MISMATCH</td><td>high</td></tr><tr><td>epochs</td><td>30</td><td>20</td><td>MISMATCH</td><td>high</td></tr><tr><td>learning_rate</td><td>0.01</td><td>0.01</td><td>MATCH</td><td>none</td></tr><tr><td>seed</td><td>None</td><td>0</td><td>MISSING</td><td>high</td></tr><tr><td>test_size</td><td>0.25</td><td>0.25</td><td>MATCH</td><td>none</td></tr></table>
+<h2>4. Environment / manifest</h2>
+<table><tr><th>Seed</th><th>Status</th><th>Isolation</th><th>Config hash</th><th>Commit</th><th>Python</th></tr>
+<tr><td>0</td><td>done</td><td>reduced isolation</td><td>7cab752301d6</td><td>local-copy</td><td>3.11.0</td></tr><tr><td>1</td><td>done</td><td>reduced isolation</td><td>7cab752301d6</td><td>local-copy</td><td>3.11.0</td></tr><tr><td>2</td><td>done</td><td>reduced isolation</td><td>7cab752301d6</td><td>local-copy</td><td>3.11.0</td></tr></table>
+<h2>5. Results</h2>
+
+<p>Published: 95.0% &middot; Reproduced mean: 97.78% (std 0.00, range 97.78-97.78, n=3)<br>
+Diff: +2.78 pp &middot; Tolerance: 1.0 pp &middot; <b>NOT_REPRODUCED</b><br><small>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</small></p>
+
+<h2>6. Limitations</h2>
+<ul><li>Matching a headline metric does not prove the whole experiment was reproduced.</li>
+<li>Seeds, hardware, and library versions can change results.</li>
+<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li></ul>
+<h2>7. Evidence ledger</h2>
+<table><tr><th>Finding</th><th>Evidence</th><th>Type</th></tr>
+<tr><td>batch_size: MISMATCH</td><td>paper=p.1: f 0.01, num_epochs of 30, and batch_size of 32 on the Wisconsin breast cance | code=config.yaml:1</td><td>paper+code</td></tr><tr><td>epochs: MISMATCH</td><td>paper=p.1: with a learning_rate of 0.01, num_epochs of 30, and batch_size of 32 on the | code=main.py:18</td><td>paper+code</td></tr><tr><td>learning_rate: MATCH</td><td>paper=p.1: rain an SGD classifier with a learning_rate of 0.01, num_epochs of 30, and batch_ | code=main.py:17</td><td>paper+code</td></tr><tr><td>seed: MISSING</td><td>paper=- | code=main.py:25</td><td>paper+code</td></tr><tr><td>test_size: MATCH</td><td>paper=p.1: east cancer dataset. We use a test_size of 0.25 for the split. 2. Results Our | code=main.py:13</td><td>paper+code</td></tr><tr><td>Reproduced mean 97.78%</td><td>3 seeds run</td><td>measured</td></tr><tr><td>Diff +2.78 pp -&gt; NOT_REPRODUCED</td><td>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</td><td>calculated</td></tr></table>
+</body></html>
