@@ -483,27 +483,37 @@ def get_macro_leaderboard():
             venue = "Machine Learning"
             domain = "Empirical Deep Learning"
 
-        # Verification metrics
-        published = claim.get("value")
-        clean_runs = [r["accuracy"] for r in results if isinstance(r, dict) and r.get("accuracy") is not None]
-        ver_status = "UNTESTED"
-        reproduced_mean = None
-        std_val = 0.0
-        diff_pp = None
+        # Look for experiment with verified runs (preferring latest version that ran)
+        best_ver = None
+        chosen_eid = eid
+        for cand_eid in sorted(exps.keys(), key=lambda k: exps[k].get("version", 1), reverse=True):
+            v = _verification(p, cand_eid)
+            if v.get("status") not in ("BLOCKED", "UNKNOWN"):
+                best_ver = v
+                chosen_eid = cand_eid
+                break
 
-        if published is not None and clean_runs:
-            ver = verifier.verify(float(published), clean_runs)
-            ver_status = ver.get("status", "UNKNOWN")
-            reproduced_mean = round(ver.get("reproduced_mean", 0.0), 2)
-            std_val = round(ver.get("std", 0.0), 2)
-            diff_pp = round(ver.get("diff_pp", 0.0), 2)
+        if best_ver is None:
+            best_ver = _verification(p, eid)
+
+        published = claim.get("value")
+        if best_ver.get("status") not in ("BLOCKED", "UNKNOWN"):
+            ver_status = best_ver.get("status")
+            reproduced_mean = round(best_ver.get("reproduced_mean", 0.0), 2)
+            std_val = round(best_ver.get("std", 0.0), 2)
+            diff_pp = round(best_ver.get("diff_pp", 0.0), 2)
+            seeds_count = best_ver.get("n", 0)
             total_delta += abs(diff_pp)
             delta_count += 1
-        elif published is not None:
-            ver_status = "PENDING_RUN"
+        else:
+            ver_status = "PENDING_RUN" if published is not None else "UNTESTED"
+            reproduced_mean = None
+            std_val = 0.0
+            diff_pp = None
+            seeds_count = 0
 
-        # Checklist audit
-        chk = checklist_auditor.audit_checklist(p, eid)
+        # Checklist audit using chosen or latest experiment
+        chk = checklist_auditor.audit_checklist(p, chosen_eid)
         compliance_pct = chk.get("score_pct", 50)
         grade = chk.get("grade", "C")
 
@@ -536,7 +546,7 @@ def get_macro_leaderboard():
             "reproduced_mean": reproduced_mean,
             "diff_pp": diff_pp,
             "seed_std": std_val,
-            "seeds_count": len(clean_runs),
+            "seeds_count": seeds_count,
             "verification_status": ver_status,
             "compliance_pct": compliance_pct,
             "grade": grade,
@@ -578,7 +588,8 @@ def get_macro_leaderboard():
 def get_experiment_radar(eid: str):
     """Retrieve the 6-axis scientific integrity radar for an experiment."""
     pid, proj, exp = get_exp(eid)
-    return robustness_radar.compute_radar_profile(proj, exp)
+    ver = _verification(proj, eid)
+    return robustness_radar.compute_radar_profile(proj, exp, ver=ver)
 
 
 @app.post("/experiments/{eid}/radar/stress-test")
@@ -588,11 +599,12 @@ def stress_test_radar(
 ):
     """Dynamically simulate hyperparameter perturbation stress on the integrity radar."""
     pid, proj, exp = get_exp(eid)
+    ver = _verification(proj, eid)
     lr_drift = float(payload.get("lr_drift", 0.0))
     batch_scale = float(payload.get("batch_scale", 1.0))
     seed_noise = float(payload.get("seed_noise", 0.0))
     return robustness_radar.compute_radar_profile(
-        proj, exp, lr_drift=lr_drift, batch_scale=batch_scale, seed_noise=seed_noise
+        proj, exp, lr_drift=lr_drift, batch_scale=batch_scale, seed_noise=seed_noise, ver=ver
     )
 
 
@@ -604,6 +616,8 @@ def get_project_radar(pid: str, experiment_id: str | None = None):
     if not exps:
         raise HTTPException(400, "Project has no experiments")
     exp = exps[experiment_id] if experiment_id and experiment_id in exps else max(exps.values(), key=lambda e: e.get("version", 1))
-    return robustness_radar.compute_radar_profile(proj, exp)
+    eid = exp.get("id")
+    ver = _verification(proj, eid)
+    return robustness_radar.compute_radar_profile(proj, exp, ver=ver)
 
 

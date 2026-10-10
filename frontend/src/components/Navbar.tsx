@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Sparkles, Plus, FolderKanban } from 'lucide-react'
+import { Sparkles, Plus, FolderKanban, Trophy } from 'lucide-react'
 
 export default function Navbar() {
   const location = useLocation()
@@ -40,6 +40,17 @@ export default function Navbar() {
             }`}
           >
             Home
+          </Link>
+          <Link
+            to="/leaderboard"
+            className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+              location.pathname.startsWith('/leaderboard')
+                ? 'text-white bg-brand-500/80 shadow-glow'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+            <span>Leaderboard</span>
           </Link>
           <Link
             to="/dashboard"

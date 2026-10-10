@@ -16,11 +16,21 @@ import {
 import { api } from '../api/client'
 import LeaderboardView from '../components/LeaderboardView'
 
-export default function Dashboard() {
+interface DashboardProps {
+  initialTab?: 'leaderboard' | 'projects'
+}
+
+export default function Dashboard({ initialTab = 'leaderboard' }: DashboardProps) {
   const [projects, setProjects] = useState<any[] | null>(null)
   const [docker, setDocker] = useState<boolean | null>(null)
   const [search, setSearch] = useState('')
-  const [mainTab, setMainTab] = useState<'leaderboard' | 'projects'>('leaderboard')
+  const [mainTab, setMainTab] = useState<'leaderboard' | 'projects'>(initialTab)
+
+  useEffect(() => {
+    if (initialTab) {
+      setMainTab(initialTab)
+    }
+  }, [initialTab])
 
   useEffect(() => {
     api.projects().then(setProjects).catch(() => setProjects([]))

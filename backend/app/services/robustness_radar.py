@@ -22,35 +22,29 @@ def compute_radar_profile(
     lr_drift: float = 0.0,
     batch_scale: float = 1.0,
     seed_noise: float = 0.0,
+    ver: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compute the 6-axis integrity radar and sensitivity stress test projections."""
     spec = exp.get("spec", {})
     paper = project.get("paper", {})
     fields = paper.get("fields", {}) if isinstance(paper, dict) else {}
     claim = spec.get("claim", {}) or {}
-    runs = project.get("runs", {}).get(exp.get("id", ""), {})
-    results = runs.get("results", [])
 
     # 1. Claim Fidelity (0 to 100)
     published = claim.get("value")
-    clean_runs = [r["accuracy"] for r in results if isinstance(r, dict) and r.get("accuracy") is not None]
-    if published is not None and clean_runs:
-        ver = verifier.verify(float(published), clean_runs)
-        diff_abs = abs(ver.get("diff_pp", 0.0))
-        # If diff is 0, score is 98. Each 1 pp delta reduces score by 5
-        base_claim_score = max(15.0, min(100.0, 98.0 - (diff_abs * 5.0)))
+    if ver and ver.get("status") not in ("BLOCKED", "UNKNOWN") and "diff_pp" in ver:
+        diff_abs = abs(ver["diff_pp"])
+        base_claim_score = max(15.0, min(100.0, 98.0 - (diff_abs * 4.0)))
     else:
         base_claim_score = 65.0  # Default baseline before empirical execution
 
     # 2. Seed Stability (0 to 100)
-    if len(clean_runs) > 1:
-        import statistics
-        std_val = statistics.stdev(clean_runs) * 100.0
-        base_seed_score = max(20.0, min(100.0, 95.0 - (std_val * 12.0)))
-    elif len(clean_runs) == 1:
+    if ver and ver.get("status") not in ("BLOCKED", "UNKNOWN") and ver.get("n", 0) > 1:
+        std_val = float(ver.get("std", 0.0))
+        base_seed_score = max(20.0, min(100.0, 95.0 - (std_val * 10.0)))
+    elif ver and ver.get("n", 0) == 1:
         base_seed_score = 60.0
     else:
-        # Check if seed flag is supported
         scan_params = project.get("scan", {}).get("params", {})
         has_seed_flag = "seed" in scan_params and scan_params["seed"].get("injectable", False)
         base_seed_score = 75.0 if has_seed_flag else 35.0

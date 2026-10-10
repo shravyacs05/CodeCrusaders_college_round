@@ -27,10 +27,18 @@ export default function App() {
             }
           />
           <Route
+            path="/leaderboard"
+            element={
+              <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                <Dashboard initialTab="leaderboard" />
+              </main>
+            }
+          />
+          <Route
             path="/projects"
             element={
               <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-                <Dashboard />
+                <Dashboard initialTab="projects" />
               </main>
             }
           />
