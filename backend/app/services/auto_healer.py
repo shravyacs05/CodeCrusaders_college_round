@@ -84,6 +84,19 @@ def diagnose_failure(project: dict[str, Any], exp_id: str) -> dict[str, Any]:
             "target_file": project.get("scan", {}).get("entrypoint") or "train.py",
         }
 
+    # 2.2 Dataset not found / download=False
+    if any(k in stderr_content for k in ("Dataset not found", "download=True", "dataset corrupted", "No such file or directory: '~/data")):
+        entrypoint = project.get("scan", {}).get("entrypoint") or "train.py"
+        return {
+            "can_heal": True,
+            "category": "DATASET_NOT_FOUND",
+            "title": "Dataset Missing (Hardcoded download=False)",
+            "root_cause": "The repository hardcoded 'download=False' and root='~/data', crashing because the dataset is not pre-installed on the host machine.",
+            "remedy": "Enable automatic dataset download (download=True) and resolve local data directory path.",
+            "action_type": "enable_dataset_download",
+            "target_file": entrypoint,
+        }
+
     # 2.5 Unrecognized arguments (e.g. train.py: error: unrecognized arguments: --out ...)
     if "unrecognized arguments" in stderr_content:
         entrypoint = project.get("scan", {}).get("entrypoint") or "train.py"
@@ -174,6 +187,12 @@ if getattr(args, 'out', None):
     print(f"==> Wrote metrics to {args.out}: accuracy={acc_val}, top-1 error={err_val}")
 """
                 patched += "\n" + writer_code
+            target_path.write_text(patched, encoding="utf-8")
+        elif diagnosis["action_type"] == "enable_dataset_download":
+            patched = content.replace("download=False", "download=True")
+            patched = patched.replace("root='~/data'", "root=os.path.expanduser('~/data')")
+            patched = patched.replace('root="~/data"', 'root=os.path.expanduser("~/data")')
+            patched = patched.replace("num_workers=8", "num_workers=2")
             target_path.write_text(patched, encoding="utf-8")
 
     diff_notes = [
