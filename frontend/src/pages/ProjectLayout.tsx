@@ -119,28 +119,41 @@ export default function ProjectLayout() {
             </div>
           </div>
 
-          {/* Version Switcher */}
-          {proj.experiments.length > 0 && (
-            <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-2xl">
-              <GitBranch className="w-4 h-4 text-brand-600" />
-              <label htmlFor="version-select" className="text-xs font-semibold text-slate-700">Version:</label>
-              <select
-                id="version-select"
-                className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-mono font-medium text-slate-800 focus:outline-none focus:border-brand-500"
-                value={eid}
-                onChange={e => setEid(e.target.value)}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Version Switcher */}
+            {proj.experiments.length > 0 && (
+              <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-2xl">
+                <GitBranch className="w-4 h-4 text-brand-600" />
+                <label htmlFor="version-select" className="text-xs font-semibold text-slate-700">Version:</label>
+                <select
+                  id="version-select"
+                  className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-mono font-medium text-slate-800 focus:outline-none focus:border-brand-500"
+                  value={eid}
+                  onChange={e => setEid(e.target.value)}
+                >
+                  {proj.experiments.map((e: any) => (
+                    <option key={e.id} value={e.id}>
+                      v{e.version} • {e.config_hash}
+                      {e.parent_id
+                        ? ` (from v${proj.experiments.find((x: any) => x.id === e.parent_id)?.version || '?'})`
+                        : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Self Healing Indicator if current experiment is failed */}
+            {proj.runs?.[eid]?.status?.state === 'failed' && (
+              <Link
+                to={`/p/${pid}/run`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold hover:bg-purple-100 transition-all shadow-xs"
               >
-                {proj.experiments.map((e: any) => (
-                  <option key={e.id} value={e.id}>
-                    v{e.version} • {e.config_hash}
-                    {e.parent_id
-                      ? ` (from v${proj.experiments.find((x: any) => x.id === e.parent_id)?.version || '?'})`
-                      : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                <span>🤖 Self-Healing Auto-Repair Ready</span>
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Demo Warning Banner */}
