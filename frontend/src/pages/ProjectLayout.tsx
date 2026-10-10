@@ -181,6 +181,12 @@ export default function ProjectLayout() {
                   Paper-Only Reconstructed
                 </span>
               )}
+              {proj.auto_detected_repo && (
+                <span className="text-[10px] uppercase font-black tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  Auto-Detected GitHub Link
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 mt-2 font-mono">
               <span>Project ID: <b className="text-slate-800">{proj.id}</b></span>

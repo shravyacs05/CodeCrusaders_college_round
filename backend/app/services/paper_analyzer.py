@@ -276,9 +276,25 @@ def render_page_png(pdf_path: str, page_num: int, dpi: int = 144) -> bytes:
         return doc[page_num - 1].get_pixmap(dpi=dpi).tobytes("png")
 
 
+def extract_repo_url(pages: list[str]) -> str | None:
+    """Scan pages for GitHub / GitLab repository URLs cited in abstract, footnotes, or text."""
+    pattern = re.compile(r"(?:https?://)?(?:www\.)?github\.com/([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+)", re.IGNORECASE)
+    for page in pages:
+        for match in pattern.finditer(page):
+            repo_path = match.group(1).rstrip(".,;)>'\"")
+            parts = repo_path.split("/")
+            if len(parts) >= 2 and not any(parts[0].lower() == x for x in ("features", "about", "site", "topics", "pulls", "issues")):
+                clean_repo = f"{parts[0]}/{parts[1]}"
+                return f"https://github.com/{clean_repo}"
+    return None
+
+
 def get_paper_metadata(pdf_path: str) -> dict[str, Any]:
-    """Return page count and dimensions for each page."""
+    """Return page count, dimensions for each page, and any discovered repo URL."""
     import pymupdf
+
+    pages = extract_pages(pdf_path)
+    discovered_repo = extract_repo_url(pages)
 
     with pymupdf.open(pdf_path) as doc:
         pages_info = []
@@ -291,14 +307,16 @@ def get_paper_metadata(pdf_path: str) -> dict[str, Any]:
         return {
             "n_pages": len(doc),
             "pages": pages_info,
+            "discovered_repo": discovered_repo,
         }
 
 
 def analyze_paper(pdf_path: str) -> dict[str, Any]:
-    """Extract with the LLM when configured (fallback: regex), then verify quotes and attach bboxes."""
+    """Extract with the LLM when configured (fallback: regex), then verify quotes, attach bboxes and discovered repo."""
     from . import llm
 
     pages = extract_pages(pdf_path)
+    discovered_repo = extract_repo_url(pages)
     method, note = "regex", None
     if llm.enabled():
         try:
@@ -311,5 +329,5 @@ def analyze_paper(pdf_path: str) -> dict[str, Any]:
     flags = validate(fields, pages)
     attach_bboxes(fields, pdf_path)
     return {"fields": fields, "flags": flags, "n_pages": len(pages), "method": method,
-            "note": note}
+            "note": note, "discovered_repo": discovered_repo}
 

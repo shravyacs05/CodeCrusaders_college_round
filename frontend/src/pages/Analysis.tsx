@@ -10,7 +10,9 @@ import {
   ShieldAlert,
   Search,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  FolderGit2,
+  ExternalLink
 } from 'lucide-react'
 
 export default function Analysis() {
@@ -25,11 +27,13 @@ export default function Analysis() {
     api.checklist(pid).then(setChecklistData).catch(() => setChecklistData(null))
     api.leakage(pid).then(setLeakageData).catch(() => setLeakageData(null))
   }, [pid])
-
   const paper = proj.paper
   const fields = Object.entries<any>(paper?.fields || {}).filter(([k]) => !k.startsWith('_'))
   const claim = paper?.fields?._claim
   const warnings = proj.scan?.warnings || []
+  const filteredWarnings = warnings.filter(
+    (w: string) => !w.includes('Auto-Detected Repository') && !w.includes('Paper-Only Autonomous Reconstruction')
+  )
 
   const filteredFields = fields.filter(([k, f]) =>
     k.toLowerCase().includes(search.toLowerCase()) ||
@@ -207,15 +211,68 @@ export default function Analysis() {
           </div>
         )}
 
+        {/* Auto-Detected Repository Banner */}
+        {proj.auto_detected_repo && (
+          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200 text-emerald-950 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs text-emerald-600">
+                <FolderGit2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-slate-900">Auto-Discovered Author Repository</span>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ✨ Citations Scanned
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                  CrisisGrid automatically parsed the paper's footnotes & abstract, detected the author's official GitHub repository (<code className="text-emerald-700 font-mono font-bold">{proj.repo_url}</code>), and initialized AST scanning.
+                </p>
+              </div>
+            </div>
+            {proj.repo_url && (
+              <a
+                href={proj.repo_url}
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-xs font-bold text-slate-700 hover:text-slate-900 shadow-xs transition-colors"
+              >
+                <span>View on GitHub</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Paper-Only Autonomous Reconstruction Banner */}
+        {proj.is_paper_only && (
+          <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 border border-indigo-200 text-indigo-950 rounded-2xl p-4 sm:p-5 shadow-xs flex items-start sm:items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white border border-indigo-200 flex items-center justify-center shrink-0 shadow-xs text-indigo-600">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm text-slate-900">Paper-Only Autonomous Benchmark Scaffold</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                  ⚡ Autonomous Synthesis
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                Author source code was omitted. CrisisGrid extracted the methodology, loss formulation, and hyperparameters directly from the PDF to autonomously generate a reproducible benchmark repository.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Scanner Warnings Banner */}
-        {warnings.length > 0 && (
+        {filteredWarnings.length > 0 && (
           <div className="bg-amber-50/90 border border-amber-200 text-amber-900 rounded-2xl p-4 shadow-sm">
             <div className="flex items-center gap-2 font-extrabold mb-2 text-sm text-amber-950">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
-              <span>Repository Scanner Warnings ({warnings.length})</span>
+              <span>Repository Scanner Warnings ({filteredWarnings.length})</span>
             </div>
             <ul className="list-disc pl-5 space-y-1 text-xs font-semibold text-amber-800">
-              {warnings.map((w: string, i: number) => (
+              {filteredWarnings.map((w: string, i: number) => (
                 <li key={i}>{w}</li>
               ))}
             </ul>
