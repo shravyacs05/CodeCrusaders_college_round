@@ -1,3 +1,69 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Vertical light lines background inspired by the AirLume hero design */
+.hero-vertical-lines {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 72px
+  );
+}
+
+.hero-radial-glow {
+  background: radial-gradient(circle at 50% 20%, rgba(43, 102, 255, 0.28) 0%, rgba(13, 27, 65, 0.4) 45%, rgba(6, 11, 28, 0.98) 85%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.glass-card-glow {
+  background: rgba(14, 27, 65, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(66, 138, 255, 0.35);
+  box-shadow: 0 0 35px rgba(43, 102, 255, 0.25), inset 0 0 20px rgba(43, 102, 255, 0.15);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.light-glass-pill {
+  background: rgba(239, 246, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(191, 219, 254, 0.8);
+}
+
+/* Custom crisp scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

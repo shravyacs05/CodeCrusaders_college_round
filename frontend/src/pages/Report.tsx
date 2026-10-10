@@ -1,23 +1,67 @@
 import { useRef } from 'react'
 import { api } from '../api/client'
 import { useProject } from './ProjectLayout'
+import { FileDown, Printer, ExternalLink, ShieldCheck } from 'lucide-react'
 
 export default function Report() {
   const { pid, eid } = useProject()
   const frame = useRef<HTMLIFrameElement>(null)
   const url = api.reportUrl(pid, eid)
   const pdfUrl = api.reportPdfUrl(pid, eid)
+
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2 items-center">
-        <a className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm hover:bg-indigo-700"
-          href={pdfUrl} download>Download PDF report</a>
-        <button className="border border-slate-300 px-3 py-1.5 rounded text-sm text-slate-700 hover:bg-slate-50"
-          onClick={() => frame.current?.contentWindow?.print()}>Print view</button>
-        <a className="border border-slate-300 px-3 py-1.5 rounded text-sm text-slate-700 hover:bg-slate-50"
-          href={url} target="_blank" rel="noreferrer">Open HTML in new tab</a>
+    <div className="space-y-4">
+      {/* Action Toolbar */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
+            Audit Documentation
+          </span>
+          <h2 className="text-lg font-extrabold text-slate-900 tracking-tight mt-0.5">
+            Publication-Grade Reproducibility Report
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <a
+            className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-glow transition-all hover:scale-105"
+            href={pdfUrl}
+            download
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            <span>Download PDF Report</span>
+          </a>
+
+          <button
+            className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-full transition-colors"
+            onClick={() => frame.current?.contentWindow?.print()}
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-500" />
+            <span>Print View</span>
+          </button>
+
+          <a
+            className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-full transition-colors"
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+            <span>Open HTML</span>
+          </a>
+        </div>
       </div>
-      <iframe ref={frame} key={url} src={url} title="report" className="w-full h-[700px] bg-white border rounded shadow-sm" />
+
+      {/* Embedded Report Frame */}
+      <div className="overflow-hidden bg-white border border-slate-200/90 rounded-3xl shadow-card">
+        <iframe
+          ref={frame}
+          key={url}
+          src={url}
+          title="Reproducibility Report"
+          className="w-full h-[760px] border-0"
+        />
+      </div>
     </div>
   )
 }
