@@ -5,8 +5,8 @@ export default function Navbar() {
   const location = useLocation()
 
   return (
-    <header className="sticky top-0 z-100 backdrop-blur-xl bg-navy-950/90 border-b border-white/10 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-[100] backdrop-blur-2xl bg-navy-950/90 border-b border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-3.5 group">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 via-cyan-400 to-indigo-500 p-0.5 flex items-center justify-center shadow-glow group-hover:scale-105 transition-transform shrink-0">
@@ -29,32 +29,32 @@ export default function Navbar() {
           </div>
         </Link>
 
-
-
-        {/* Navigation Links */}
-        <nav className="flex items-center gap-2 text-sm font-medium text-slate-300">
+        {/* Floating Glass Navigation Links */}
+        <nav className="flex items-center gap-1.5 p-1 bg-white/[0.05] border border-white/[0.1] rounded-full backdrop-blur-md shadow-inner">
           <Link
             to="/"
-            className={`px-4 py-2 rounded-full transition-colors ${location.pathname === '/'
-                ? 'text-white bg-white/10'
-                : 'hover:text-white hover:bg-white/5'
-              }`}
+            className={`px-4 py-2 rounded-full text-xs font-extrabold transition-all ${
+              location.pathname === '/'
+                ? 'text-white bg-brand-500/80 shadow-glow'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
           >
             Home
           </Link>
           <Link
             to="/dashboard"
-            className={`px-4 py-2 rounded-full flex items-center gap-1.5 transition-colors ${location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/p/')
-                ? 'text-white bg-white/10'
-                : 'hover:text-white hover:bg-white/5'
-              }`}
+            className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+              location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/p/')
+                ? 'text-white bg-brand-500/80 shadow-glow'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
           >
-            <FolderKanban className="w-4 h-4 text-brand-400" />
+            <FolderKanban className="w-3.5 h-3.5 text-brand-300" />
             <span>Projects</span>
           </Link>
           <a
             href="/#faq"
-            className="px-4 py-2 rounded-full hover:text-white hover:bg-white/5 transition-colors hidden sm:inline-block"
+            className="px-4 py-2 rounded-full text-xs font-extrabold text-slate-300 hover:text-white hover:bg-white/10 transition-all hidden sm:inline-block"
           >
             FAQ
           </a>
@@ -64,9 +64,9 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <Link
             to="/new"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 px-4 py-2 rounded-full shadow-glow transition-all hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 text-xs font-extrabold text-white bg-gradient-to-r from-brand-500 via-blue-600 to-indigo-600 hover:from-brand-400 hover:to-blue-500 px-5 py-2.5 rounded-full shadow-glow transition-all hover:scale-105 active:scale-95 border border-white/20"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>New Reproduction</span>
           </Link>
         </div>
@@ -74,3 +74,4 @@ export default function Navbar() {
     </header>
   )
 }
+

@@ -117,65 +117,78 @@ export default function Landing() {
           </div>
 
           {/* ============================================================ */}
-          {/* THE 3 HIGH-TECH HERO SHOWCASE CARDS                          */}
-          {/* ============================================================ */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center max-w-6xl mx-auto text-left">
+          {/* THE 3 HIGH-TECH HERO SHOWCASE CARDS (Symmetrically Balanced) */}
+          <div className="flex flex-col md:flex-row gap-6 items-stretch max-w-6xl mx-auto text-left">
             {/* Card 1: Left Card - Platform Telemetry */}
-            <div className="md:col-span-3 glass-card rounded-3xl p-5 text-white shadow-2xl relative border border-white/15 backdrop-blur-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-300">Platform Telemetry</span>
-                <Sparkles className="w-4 h-4 text-cyan-300" />
-              </div>
-              <div className="text-[11px] text-slate-400 mb-1">Status Overview</div>
-              <div className="flex items-baseline gap-2 mb-3">
-                <span className="text-3xl font-extrabold tracking-tight text-white font-mono">
-                  {projects ? projects.length : 0}
-                </span>
-                <span className="text-[10px] bg-emerald-500/30 text-emerald-200 px-2 py-0.5 rounded-full font-semibold border border-emerald-400/30">
-                  ● Active
-                </span>
-              </div>
-              <div className="text-xs text-slate-300 font-medium mb-3">Reproductions Tracked</div>
+            <div className="md:w-1/3 flex flex-col justify-between glass-card rounded-3xl p-6 text-white shadow-2xl relative border border-white/15 backdrop-blur-xl min-h-[320px]">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-full">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Platform Telemetry
+                  </span>
+                  <span className="text-[10px] bg-emerald-500/30 text-emerald-200 px-2.5 py-0.5 rounded-full font-bold border border-emerald-400/30">
+                    ● Active
+                  </span>
+                </div>
+                
+                <div className="text-[11px] font-semibold text-slate-400 mb-1">Tracked Reproductions</div>
+                <div className="text-3xl font-extrabold tracking-tight text-white font-mono mb-3">
+                  {projects ? projects.length : 0} Projects
+                </div>
 
-              {/* Sandbox info pill */}
-              <div className="bg-white/10 rounded-2xl p-2.5 flex items-center justify-between border border-white/10 mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-brand-500/40 flex items-center justify-center text-brand-300">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-slate-400">Sandbox Isolation</div>
-                    <div className="text-xs font-semibold text-white">
-                      {docker ? 'Docker Non-Root' : 'Virtualenv Mode'}
+                {/* Sandbox info pill */}
+                <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between border border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-xl bg-brand-500/40 flex items-center justify-center text-brand-300 shrink-0">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-semibold text-slate-300">Sandbox Isolation</div>
+                      <div className="text-xs font-extrabold text-white">
+                        {docker ? 'Docker Non-Root' : 'Virtualenv Mode'}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <div className="pt-3 mt-3 border-t border-white/10 flex items-center justify-between text-xs font-medium text-slate-300">
+                <span className="text-[11px] text-slate-400 font-mono">Runner: Active</span>
+                <Link
+                  to="/dashboard"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all border border-white/15 hover:scale-105"
+                  title="View Platform Dashboard"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
 
             {/* Card 2: Center Card - Smart Search & Neural Lab Preview */}
-            <div className="md:col-span-5 bg-white rounded-3xl p-6 text-slate-900 shadow-2xl relative border border-slate-100 z-10 transform md:-translate-y-2">
-              <div className="text-center mb-3">
-                <span className="inline-block bg-slate-100 text-slate-700 text-[11px] font-bold px-3 py-1 rounded-full mb-2">
-                  CrisisGrid Smart Engine
-                </span>
-                <h3 className="text-xl font-extrabold tracking-tight text-slate-900 leading-snug">
-                  Scanning Repositories & Papers In Real-Time
-                </h3>
-              </div>
-
-              {/* Radial Score Pill */}
-              <div className="flex items-center justify-center gap-3 bg-blue-50/70 border border-blue-100 rounded-2xl p-2.5 mb-4">
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-brand-200 flex items-center justify-center font-bold text-brand-600 text-xs font-mono">
-                  94%
+            <div className="md:w-1/3 bg-white rounded-3xl p-6 text-slate-900 shadow-2xl relative border border-slate-100 z-10 flex flex-col justify-between min-h-[320px]">
+              <div>
+                <div className="text-center mb-3">
+                  <span className="inline-block bg-slate-100 text-slate-700 text-[11px] font-extrabold px-3 py-1 rounded-full mb-1.5 border border-slate-200">
+                    CrisisGrid Smart Engine
+                  </span>
+                  <h3 className="text-xl font-extrabold tracking-tight text-slate-900 leading-snug">
+                    Scanning Repositories & Papers In Real-Time
+                  </h3>
                 </div>
-                <div className="text-left text-xs font-medium text-slate-700 leading-tight">
-                  Reproducibility match expected within <b className="text-slate-900">±2.0 pp</b> tolerance 🔥
+
+                {/* Radial Score Pill */}
+                <div className="flex items-center justify-center gap-3 bg-blue-50/70 border border-blue-100 rounded-2xl p-2.5 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-brand-200 flex items-center justify-center font-bold text-brand-600 text-xs font-mono shrink-0">
+                    94%
+                  </div>
+                  <div className="text-left text-xs font-medium text-slate-700 leading-tight">
+                    Reproducibility match expected within <b className="text-slate-900">±2.0 pp</b> tolerance 🔥
+                  </div>
                 </div>
               </div>
 
               {/* Hero Visual Image */}
-              <div className="relative rounded-2xl overflow-hidden shadow-inner border border-slate-200 h-36 bg-slate-900">
+              <div className="relative rounded-2xl overflow-hidden shadow-inner border border-slate-200 h-32 bg-slate-900 mt-2">
                 <img
                   src="/hero-preview.jpg"
                   alt="High-Tech AI Research Laboratory and Neural Network"
@@ -191,43 +204,43 @@ export default function Landing() {
             </div>
 
             {/* Card 3: Right Card - Verified Claim Match */}
-            <div className="md:col-span-4 glass-card-glow rounded-3xl p-5 text-white shadow-2xl relative">
-              <div className="flex items-center justify-between mb-3">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-                  <Check className="w-3 h-3 text-cyan-400" /> Ground Truth Claim Match
-                </span>
-              </div>
-
-              <div className="text-[11px] text-slate-300 mb-1">Empirical Result</div>
-              <div className="text-lg font-bold font-mono tracking-tight text-white mb-1">
-                Paper Claim → Docker Sandbox
-              </div>
-              <div className="text-2xl font-extrabold text-cyan-300 font-mono mb-2">
-                Accuracy 96.5%
-              </div>
-              <div className="text-xs text-slate-300 font-medium mb-4 flex items-center gap-1.5">
-                <span className="text-emerald-400 font-bold">Delta: 0.04 pp</span>
-                <span>· Deterministic match</span>
-              </div>
-
-              <div className="relative py-2 border-t border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-brand-400" />
-                  <div className="w-20 border-t-2 border-dashed border-cyan-400/60" />
-                  <div className="w-2.5 h-2.5 rotate-45 border-t-2 border-r-2 border-cyan-400" />
+            <div className="md:w-1/3 flex flex-col justify-between glass-card rounded-3xl p-6 text-white shadow-2xl relative border border-white/15 backdrop-blur-xl min-h-[320px]">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-full">
+                    <Check className="w-3.5 h-3.5 text-cyan-400" /> Claim Verification
+                  </span>
+                  <span className="text-[10px] bg-cyan-500/30 text-cyan-200 px-2.5 py-0.5 rounded-full font-bold border border-cyan-400/30">
+                    Verified
+                  </span>
                 </div>
 
+                <div className="text-[11px] font-semibold text-slate-400 mb-1">Empirical Accuracy Result</div>
+                <div className="text-3xl font-extrabold text-cyan-300 font-mono tracking-tight mb-2">
+                  96.5%
+                </div>
+                <div className="text-xs text-slate-300 font-medium mb-3 flex items-center gap-1.5">
+                  <span className="text-emerald-400 font-bold">Delta: 0.04 pp</span>
+                  <span>· Deterministic</span>
+                </div>
+              </div>
+
+              <div className="pt-3 mt-3 border-t border-white/10 flex items-center justify-between text-xs font-medium text-slate-300">
+                <span className="text-[11px] text-slate-400 font-mono">Paper → Docker</span>
                 <Link
                   to={demo1 ? `/p/${demo1.id}` : '/dashboard'}
                   className="w-8 h-8 rounded-full bg-white text-brand-600 hover:bg-brand-50 flex items-center justify-center shadow-lg transition-transform hover:scale-110"
+                  title="View Verified Project"
                 >
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
           </div>
+
         </div>
       </section>
+
 
       {/* ============================================================ */}
       {/* INTERACTIVE DEMO BENCHMARKS SECTION (Single Placement)       */}
