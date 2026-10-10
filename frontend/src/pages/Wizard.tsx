@@ -19,6 +19,7 @@ export default function Wizard() {
   const [repo, setRepo] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [demo, setDemo] = useState(false)
+  const [paperOnly, setPaperOnly] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
@@ -28,11 +29,15 @@ export default function Wizard() {
       setErr('Please select a paper PDF to extract claims and hyperparameters.')
       return
     }
+    if (!paperOnly && !repo.trim()) {
+      setErr('Please provide a repository URL or enable "Paper-Only Mode" to autonomously reconstruct code.')
+      return
+    }
     setBusy(true)
     setErr('')
     let pid = ''
     try {
-      pid = (await api.createProject(name, repo, file, demo)).id
+      pid = (await api.createProject(name, paperOnly ? '' : repo, file, demo, paperOnly)).id
       await api.analyze(pid)
       nav(`/p/${pid}`)
     } catch (e) {
@@ -120,25 +125,56 @@ export default function Wizard() {
             </div>
           </div>
 
-          {/* Repository URL */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-              Repository (Public Git URL or Local Server Path)
-            </label>
-            <div className="relative">
-              <FolderGit2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          {/* Paper-Only Reconstruction Toggle */}
+          <div className={`p-4 rounded-2xl border transition-all ${
+            paperOnly
+              ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-950 shadow-xs'
+              : 'bg-slate-50 border-slate-200'
+          }`}>
+            <label className="flex items-start gap-3 cursor-pointer">
               <input
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 font-mono transition-all"
-                required
-                value={repo}
-                onChange={e => setRepo(e.target.value)}
-                placeholder="https://github.com/org/repo  or  /path/to/repo"
+                type="checkbox"
+                checked={paperOnly}
+                onChange={e => setPaperOnly(e.target.checked)}
+                className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
               />
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1.5">
-              The AST scanner will inspect Argparse CLI arguments, YAML/JSON configs, constants, and random seeds.
-            </p>
+              <div className="text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-slate-900 block text-sm">
+                    Paper-Only Reproduction Mode (No Source Code Available)
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    ⚡ Autonomous Synthesis
+                  </span>
+                </div>
+                <p className="text-slate-600 mt-1 leading-relaxed">
+                  Enable this if the paper did not publish source code. CrisisGrid will parse the methodology and parameters from the PDF and autonomously synthesize a runnable benchmark repository.
+                </p>
+              </div>
+            </label>
           </div>
+
+          {/* Repository URL */}
+          {!paperOnly && (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                Repository (Public Git URL or Local Server Path)
+              </label>
+              <div className="relative">
+                <FolderGit2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 font-mono transition-all"
+                  required={!paperOnly}
+                  value={repo}
+                  onChange={e => setRepo(e.target.value)}
+                  placeholder="https://github.com/org/repo  or  /path/to/repo"
+                />
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5">
+                The AST scanner will inspect Argparse CLI arguments, YAML/JSON configs, constants, and random seeds.
+              </p>
+            </div>
+          )}
 
           {/* Synthetic Demo Checkbox */}
           <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/60 transition-colors">

@@ -11,7 +11,8 @@ from fastapi.responses import FileResponse, HTMLResponse
 from .config import DATA_DIR, TOLERANCE_PP
 from .services import (checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
                        paper_analyzer, reconciler, repo_scanner, report, runner,
-                       spec_builder, verifier, versioning, robustness_radar, xai_explainer)
+                       spec_builder, verifier, versioning, robustness_radar, xai_explainer,
+                       scaffold_synthesizer)
 
 app = FastAPI(title="CrisisGrid")
 if (Path(__file__).resolve().parents[2] / "frontend" / "dist" / "assets").exists():
@@ -102,6 +103,7 @@ def project_detail(pid: str):
     exps = sorted(p.get("experiments", {}).values(), key=lambda e: e["version"])
     paper = p.get("paper")
     return {"id": p["id"], "name": p["name"], "status": p["status"], "is_demo": p.get("is_demo"),
+            "is_paper_only": p.get("is_paper_only", False),
             "repo_url": p["repo_url"], "commit": p.get("commit"), "error": p.get("error"),
             "paper": paper,
             "scan": {"blocked": p["scan"].get("blocked"), "entrypoint": p["scan"].get("entrypoint"),
@@ -117,20 +119,23 @@ def list_projects():
         f = d / "project.json"
         if f.exists():
             p = json.loads(f.read_text())
-            out.append({"id": p["id"], "name": p["name"], "status": p["status"]})
+            out.append({"id": p["id"], "name": p["name"], "status": p["status"],
+                        "is_paper_only": p.get("is_paper_only", False)})
     return out
 
 
 @app.post("/projects")
-async def create_project(name: str = Form(...), repo_url: str = Form(...),
-                         paper: UploadFile = File(...), is_demo: bool = Form(False)):
+async def create_project(name: str = Form(...), repo_url: str = Form(""),
+                         paper: UploadFile = File(...), is_demo: bool = Form(False),
+                         is_paper_only: bool = Form(False)):
     pid = uuid.uuid4().hex[:8]
     _p(pid).mkdir(parents=True)
     paper_path = _p(pid) / "paper.pdf"
     with open(paper_path, "wb") as f:
         shutil.copyfileobj(paper.file, f)
-    save(pid, {"id": pid, "name": name, "repo_url": repo_url, "paper_path": str(paper_path),
-               "status": "created", "is_demo": is_demo, "experiments": {}, "runs": {}})
+    save(pid, {"id": pid, "name": name, "repo_url": repo_url or "", "paper_path": str(paper_path),
+               "status": "created", "is_demo": is_demo, "is_paper_only": is_paper_only,
+               "experiments": {}, "runs": {}})
     return {"id": pid}
 
 
@@ -138,14 +143,30 @@ async def create_project(name: str = Form(...), repo_url: str = Form(...),
 def analyze(pid: str):
     proj = load(pid)
     paper = paper_analyzer.analyze_paper(proj["paper_path"])
-    try:
-        repo_path, commit = repo_scanner.get_repo(proj["repo_url"], _p(pid) / "repo")
-    except Exception as e:
-        proj["status"] = "blocked"
-        proj["error"] = f"Could not fetch repo: {e}"
-        save(pid, proj)
-        raise HTTPException(400, proj["error"])
+    
+    # Check if paper-only reconstruction mode or repo is empty
+    is_paper_only = proj.get("is_paper_only", False) or not bool((proj.get("repo_url") or "").strip())
+    repo_path = _p(pid) / "repo"
+
+    if is_paper_only:
+        commit = scaffold_synthesizer.synthesize_repo(repo_path, paper["fields"])
+        proj["is_paper_only"] = True
+    else:
+        try:
+            repo_path, commit = repo_scanner.get_repo(proj["repo_url"], repo_path)
+        except Exception as e:
+            proj["status"] = "blocked"
+            proj["error"] = f"Could not fetch repo: {e}"
+            save(pid, proj)
+            raise HTTPException(400, proj["error"])
+
     scan = repo_scanner.scan_repo(repo_path)
+    if is_paper_only:
+        scan.setdefault("warnings", []).append(
+            "⚡ Paper-Only Autonomous Reconstruction: Author source code was omitted. "
+            "CrisisGrid autonomously synthesized an executable benchmark scaffold based on the paper's extracted specifications."
+        )
+
     findings = reconciler.reconcile(paper["fields"], scan["params"], enrich_llm=True)
     spec = spec_builder.build_spec(paper, scan)
     eid = uuid.uuid4().hex[:8]

@@ -10,10 +10,11 @@ export const api = {
   health: () => http.get('/health').then(r => r.data),
   projects: () => http.get('/projects').then(r => r.data),
   project: (pid: string) => http.get(`/projects/${pid}`).then(r => r.data),
-  createProject: (name: string, repo: string, file: File, isDemo: boolean) => {
+  createProject: (name: string, repo: string, file: File, isDemo: boolean, isPaperOnly: boolean = false) => {
     const f = new FormData()
     f.append('name', name); f.append('repo_url', repo); f.append('paper', file)
     f.append('is_demo', String(isDemo))
+    f.append('is_paper_only', String(isPaperOnly))
     return http.post('/projects', f).then(r => r.data)
   },
   analyze: (pid: string) => http.post(`/projects/${pid}/analyze`).then(r => r.data),
