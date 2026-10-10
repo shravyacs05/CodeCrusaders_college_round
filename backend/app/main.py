@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from .config import DATA_DIR, TOLERANCE_PP
 from .services import (checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
                        paper_analyzer, reconciler, repo_scanner, report, runner,
-                       spec_builder, verifier, versioning, robustness_radar)
+                       spec_builder, verifier, versioning, robustness_radar, xai_explainer)
 
 app = FastAPI(title="CrisisGrid")
 if (Path(__file__).resolve().parents[2] / "frontend" / "dist" / "assets").exists():
@@ -315,13 +315,25 @@ def _verification(proj: dict, eid: str) -> dict:
     if ser["reason"] or not ser["values"]:
         return {"status": "BLOCKED", "reason": ser["reason"] or "no successful runs",
                 "tolerance_pp": TOLERANCE_PP}
-    return verifier.verify(exp["spec"]["claim"]["value"], ser["values"], TOLERANCE_PP, scale=1.0)
+    res = verifier.verify(exp["spec"]["claim"]["value"], ser["values"], TOLERANCE_PP, scale=1.0)
+    try:
+        res["xai_attribution"] = xai_explainer.compute_attribution(proj, eid, res)
+    except Exception:
+        pass
+    return res
 
 
 @app.get("/experiments/{eid}/verification")
 def verification(eid: str):
     pid, proj, exp = get_exp(eid)
     return _verification(proj, eid)
+
+
+@app.get("/experiments/{eid}/xai-attribution")
+def xai_attribution(eid: str):
+    pid, proj, exp = get_exp(eid)
+    ver = _verification(proj, eid)
+    return xai_explainer.compute_attribution(proj, eid, ver)
 
 
 @app.get("/experiments/{a}/compare/{b}")

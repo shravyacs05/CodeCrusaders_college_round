@@ -3,11 +3,12 @@ import { api } from '../api/client'
 import SeedChart from '../components/SeedChart'
 import IntegrityRadar from '../components/IntegrityRadar'
 import { StatusPill } from '../components/ProvenanceBadge'
+import XAIAttributionCard from '../components/XAIAttributionCard'
 import { useProject } from './ProjectLayout'
 import { ShieldCheck, AlertCircle, Info, CheckCircle2, TrendingUp, Sliders, Check, X } from 'lucide-react'
 
 export default function Verify() {
-  const { eid } = useProject()
+  const { eid, proj, openPaperViewer } = useProject()
   const [ver, setVer] = useState<any>(null)
   const [seeds, setSeeds] = useState<any[]>([])
 
@@ -16,6 +17,21 @@ export default function Verify() {
     api.verification(eid).then(setVer)
     api.status(eid).then(s => setSeeds(s.seeds || []))
   }, [eid])
+
+  const handleInspectParam = (param: string) => {
+    if (!openPaperViewer || !proj?.paper?.fields) return
+    const field = proj.paper.fields[param]
+    if (field && field.quote) {
+      openPaperViewer({
+        id: param,
+        param,
+        value: field.value,
+        page: field.page || 1,
+        bbox: field.bbox,
+        quote: field.quote,
+      })
+    }
+  }
 
   if (!ver) return (
     <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center text-slate-500">
@@ -110,6 +126,15 @@ export default function Verify() {
 
       {/* 6-Axis Scientific Integrity Radar & Cherry-Picking Stress Test */}
       <IntegrityRadar eid={eid} />
+
+      {/* Explainable AI (XAI) Attribution & Counterfactual Reasoning Card */}
+      {ver.xai_attribution && (
+        <XAIAttributionCard
+          xai={ver.xai_attribution}
+          unit={unit}
+          onInspectParam={handleInspectParam}
+        />
+      )}
 
       {/* Verification Criteria Ledger */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">

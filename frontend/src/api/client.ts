@@ -41,6 +41,8 @@ export const api = {
     http.get(`/experiments/${eid}/diagnose-heal`).then(r => r.data),
   autoHeal: (eid: string) =>
     http.post(`/experiments/${eid}/auto-heal`).then(r => r.data),
+  xaiAttribution: (eid: string) =>
+    http.get(`/experiments/${eid}/xai-attribution`).then(r => r.data),
   paperPdfUrl: (pid: string) => `/projects/${pid}/paper.pdf`,
   paperPageUrl: (pid: string, page: number) => `/projects/${pid}/paper/pages/${page}`,
   paperMetadata: (pid: string) => http.get(`/projects/${pid}/paper/metadata`).then(r => r.data),
