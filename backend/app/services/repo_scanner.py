@@ -86,18 +86,20 @@ def scan_argparse(tree: ast.AST, rel: str) -> tuple[list[dict[str, Any]], str | 
     for node in ast.walk(tree):
         if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
                 and node.func.attr == "add_argument" and node.args):
-            flag = _lit(node.args[0])
-            if not isinstance(flag, str) or not flag.startswith("--"):
+            flags = [_lit(a) for a in node.args if isinstance(_lit(a), str) and _lit(a).startswith("-")]
+            if not flags:
                 continue
+            flag = max(flags, key=len)
             raw = flag.lstrip("-")
+            prefix = "--" if flag.startswith("--") else "-"
             n = norm(raw)
             if raw in OUTPUT_FLAGS or n in OUTPUT_FLAGS:
-                out_flag = raw
+                out_flag = (prefix, raw)
                 continue
             if raw in CONFIG_FLAGS or n in CONFIG_FLAGS:
                 continue
 
-            tunable_flags.append(raw)
+            tunable_flags.append((prefix, raw))
             default = next((_lit(k.value) for k in node.keywords if k.arg == "default"), None)
             if default is not None and _accept(n, default):
                 candidates.append({
@@ -107,6 +109,7 @@ def scan_argparse(tree: ast.AST, rel: str) -> tuple[list[dict[str, Any]], str | 
                     "file": rel,
                     "line": node.lineno,
                     "flag": raw,
+                    "prefix": prefix,
                     "injectable": True,
                 })
     return candidates, out_flag, tunable_flags
@@ -336,15 +339,22 @@ def scan_repo(repo_path: Path) -> dict[str, Any]:
     # 5. Build run template
     tunable_seen = set()
     template_parts = [f"python {rel_entry}"]
-    for raw in tunable_flags:
+    for item in tunable_flags:
+        if isinstance(item, tuple):
+            prefix, raw = item
+        else:
+            prefix, raw = "--", item
         n = norm(raw)
         if n in tunable_seen:
             continue
         tunable_seen.add(n)
-        template_parts.append(f"--{raw} {{{n}}}")
+        template_parts.append(f"{prefix}{raw} {{{n}}}")
 
     if out_flag:
-        template_parts.append(f"--{out_flag} {{out}}")
+        if isinstance(out_flag, tuple):
+            template_parts.append(f"{out_flag[0]}{out_flag[1]} {{out}}")
+        else:
+            template_parts.append(f"--{out_flag} {{out}}")
     else:
         template_parts.append("--out {out}")
 

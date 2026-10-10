@@ -1,0 +1,31 @@
+Parameters:
+BATCH_SIZE=128
+CUDA=False
+DROPOUT=0.5
+EMBED_DIM=128
+EPOCHS=1
+KERNEL_NUM=10
+KERNEL_SIZES=3,4,5
+LOG_INTERVAL=100
+LR=0.001
+OUT=/Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/metrics_seed0.json
+PREDICT=False
+SAVE_DIR=snapshot
+SAVE_INTERVAL=1000
+SNAPSHOT=None
+TEST=False
+TEST_INTERVAL=200
+TRAIN=True
+Model parameters: 1665372
+
+Batch[100] - loss: 0.124757  acc: 96.094%(123/128)Evaluation - loss: 0.075974  acc: 96.846% (2487/2568) 
+
+==> Wrote metrics to /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/metrics_seed0.json: accuracy=96.84579439252336
+
+--- stderr ---
+Building prefix dict from the default dictionary ...
+Loading model from cache /var/folders/pg/6zlgfkk91yzcg_ygtbthvk980000gn/T/jieba.cache
+Loading model cost 0.274 seconds.
+Prefix dict has been built successfully.
+/opt/homebrew/lib/python3.14/site-packages/torch/nn/functional.py:3560: UserWarning: size_average and reduce args will be deprecated, please use reduction='sum' instead.
+  reduction = _Reduction.legacy_get_string(size_average, reduce)

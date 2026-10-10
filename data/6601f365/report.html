@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CrisisGrid Report</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#222}
+table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:14px}
+th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px solid #e0a800}
+.tag{padding:2px 6px;border-radius:4px;background:#eee}
+</style></head><body>
+<h1>Reproducibility Report: My reproduction</h1>
+
+<h2>1. Claim</h2>
+<p>accuracy = 93.6% <br><small>p.4: CNN-non-static | 81.5 | 48.0 | 87.2 | 93.4 | 93.6 | 84.3 | 89.5</small></p>
+<h2>2. Extracted methodology</h2>
+<table><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Reference</th></tr>
+<tr><td>batch_size</td><td>128</td><td><span class="tag">code</span></td><td>main.py:17</td></tr><tr><td>dropout</td><td>0.5</td><td><span class="tag">code</span></td><td>main.py:23</td></tr><tr><td>embed_dim</td><td>128</td><td><span class="tag">code</span></td><td>main.py:24</td></tr><tr><td>epochs</td><td>1</td><td><span class="tag">code</span></td><td>main.py:16</td></tr><tr><td>kernel_num</td><td>10</td><td><span class="tag">code</span></td><td>main.py:25</td></tr><tr><td>learning_rate</td><td>0.001</td><td><span class="tag">code</span></td><td>main.py:15</td></tr><tr><td>log_interval</td><td>100</td><td><span class="tag">code</span></td><td>main.py:18</td></tr><tr><td>optimizer</td><td>MISSING</td><td><span class="tag">missing</span></td><td></td></tr><tr><td>save_interval</td><td>1000</td><td><span class="tag">code</span></td><td>main.py:20</td></tr><tr><td>test_interval</td><td>200</td><td><span class="tag">code</span></td><td>main.py:19</td></tr></table>
+<p class="warn"><b>Scanner warnings</b></p><ul><li>No --seed argparse flag: all seeds will run identically, so seed variance cannot be measured.</li></ul>
+<h2>3. Paper vs. code findings</h2>
+<table><tr><th>Param</th><th>Paper</th><th>Code</th><th>Status</th><th>Severity</th></tr>
+<tr><td>batch_size</td><td>50</td><td>128</td><td>MISMATCH</td><td>high</td></tr><tr><td>dropout</td><td>None</td><td>0.5</td><td>MISSING</td><td>high</td></tr><tr><td>embed_dim</td><td>None</td><td>128</td><td>MISSING</td><td>high</td></tr><tr><td>epochs</td><td>None</td><td>1</td><td>MISSING</td><td>high</td></tr><tr><td>kernel_num</td><td>None</td><td>10</td><td>MISSING</td><td>high</td></tr><tr><td>learning_rate</td><td>None</td><td>0.001</td><td>MISSING</td><td>high</td></tr><tr><td>log_interval</td><td>None</td><td>100</td><td>MISSING</td><td>high</td></tr><tr><td>save_interval</td><td>None</td><td>1000</td><td>MISSING</td><td>high</td></tr><tr><td>test_interval</td><td>None</td><td>200</td><td>MISSING</td><td>high</td></tr></table>
+<h2>4. Environment / manifest</h2>
+<table><tr><th>Seed</th><th>Status</th><th>Isolation</th><th>Config hash</th><th>Commit</th><th>Python</th></tr>
+<tr><td>0</td><td>done</td><td>reduced isolation</td><td>517158009cb3</td><td>e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb</td><td>3.14.4</td></tr><tr><td>1</td><td>done</td><td>reduced isolation</td><td>517158009cb3</td><td>e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb</td><td>3.14.4</td></tr><tr><td>2</td><td>done</td><td>reduced isolation</td><td>517158009cb3</td><td>e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb</td><td>3.14.4</td></tr></table>
+<h2>5. Results</h2>
+
+<p>Published: 93.6% &middot; Reproduced mean: 97.48% (std 0.58, range 96.85-97.98, n=3)<br>
+Diff: +3.88 pp &middot; Tolerance: 1.0 pp &middot; <b>NOT_REPRODUCED</b><br><small>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</small></p>
+
+<h2>6. Limitations</h2>
+<ul><li>Matching a headline metric does not prove the whole experiment was reproduced.</li>
+<li>Seeds, hardware, and library versions can change results.</li>
+<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li></ul>
+<h2>7. Evidence ledger</h2>
+<table><tr><th>Finding</th><th>Evidence</th><th>Type</th></tr>
+<tr><td>batch_size: MISMATCH</td><td>paper=p.3: For all datasets we use: rectiﬁed linear units, ﬁlter windows (h) of 3, 4, 5 with 100 feature maps each, dropout rate (p) of 0.5, l2 constraint (s) of 3, and mini-batch size of 50. | code=main.py:17</td><td>paper+code</td></tr><tr><td>dropout: MISSING</td><td>paper=- | code=main.py:23</td><td>paper+code</td></tr><tr><td>embed_dim: MISSING</td><td>paper=- | code=main.py:24</td><td>paper+code</td></tr><tr><td>epochs: MISSING</td><td>paper=- | code=main.py:16</td><td>paper+code</td></tr><tr><td>kernel_num: MISSING</td><td>paper=- | code=main.py:25</td><td>paper+code</td></tr><tr><td>learning_rate: MISSING</td><td>paper=- | code=main.py:15</td><td>paper+code</td></tr><tr><td>log_interval: MISSING</td><td>paper=- | code=main.py:18</td><td>paper+code</td></tr><tr><td>save_interval: MISSING</td><td>paper=- | code=main.py:20</td><td>paper+code</td></tr><tr><td>test_interval: MISSING</td><td>paper=- | code=main.py:19</td><td>paper+code</td></tr><tr><td>Reproduced mean 97.48%</td><td>3 seeds run</td><td>measured</td></tr><tr><td>Diff +3.88 pp -&gt; NOT_REPRODUCED</td><td>REPRODUCED if |diff| &lt;= 1.0 pp; PARTIAL if published within observed seed range or mean +/- 2 std</td><td>calculated</td></tr></table>
+</body></html>

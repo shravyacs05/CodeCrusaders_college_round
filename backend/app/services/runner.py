@@ -110,7 +110,7 @@ def render_command(template: str, spec: dict[str, Any], seed: int, out: str,
     cmd, i = [], 0
     while i < len(tokens):
         t = tokens[i]
-        if t.startswith("--") and i + 1 < len(tokens) and tokens[i + 1].startswith("{"):
+        if t.startswith("-") and i + 1 < len(tokens) and tokens[i + 1].startswith("{"):
             key = tokens[i + 1].strip("{}")
             if values.get(key) is not None:
                 cmd += [t, str(values[key])]

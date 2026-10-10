@@ -43,6 +43,108 @@
       },
       "diff_from_parent": [],
       "config_hash": "4458a7a82f8d"
+    },
+    "7b1df62e": {
+      "id": "7b1df62e",
+      "parent_id": null,
+      "version": 1,
+      "spec": {
+        "claim": {
+          "metric": "accuracy",
+          "value": 93.6,
+          "ref": "p.4: CNN-non-static | 81.5 | 48.0 | 87.2 | 93.4 | 93.6 | 84.3 | 89.5",
+          "percent": true
+        },
+        "params": {
+          "batch_size": {
+            "value": 128,
+            "source": "code",
+            "ref": "main.py:17",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "dropout": {
+            "value": 0.5,
+            "source": "code",
+            "ref": "main.py:23",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "embed_dim": {
+            "value": 128,
+            "source": "code",
+            "ref": "main.py:24",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "epochs": {
+            "value": 1,
+            "source": "code",
+            "ref": "main.py:16",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "kernel_num": {
+            "value": 10,
+            "source": "code",
+            "ref": "main.py:25",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "learning_rate": {
+            "value": 0.001,
+            "source": "code",
+            "ref": "main.py:15",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "log_interval": {
+            "value": 100,
+            "source": "code",
+            "ref": "main.py:18",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "optimizer": {
+            "value": null,
+            "source": "missing",
+            "ref": null,
+            "verified": false,
+            "injectable": false,
+            "kind": null
+          },
+          "save_interval": {
+            "value": 1000,
+            "source": "code",
+            "ref": "main.py:20",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          },
+          "test_interval": {
+            "value": 200,
+            "source": "code",
+            "ref": "main.py:19",
+            "verified": true,
+            "injectable": true,
+            "kind": "argparse"
+          }
+        },
+        "run_command_template": "python main.py -lr {learning_rate} -epochs {epochs} -batch-size {batch_size} -log-interval {log_interval} -test-interval {test_interval} -save-interval {save_interval} -save-dir {save_dir} -dropout {dropout} -embed-dim {embed_dim} -kernel-num {kernel_num} -kernel-sizes {kernel_sizes} -snapshot {snapshot} -train {train} -test {test} -predict {predict} --out {out}",
+        "blocked": null,
+        "warnings": [
+          "No --seed argparse flag: all seeds will run identically, so seed variance cannot be measured."
+        ]
+      },
+      "diff_from_parent": [],
+      "config_hash": "517158009cb3"
     }
   },
   "runs": {
@@ -64,6 +166,86 @@
       },
       "results": [],
       "setup_log": "Looking in links: https://download.pytorch.org/whl/torch_stable.html\nERROR: Could not find a version that satisfies the requirement torch==1.12.1+cpu (from versions: 2.9.0, 2.9.1, 2.10.0, 2.11.0, 2.12.0, 2.12.1, 2.13.0, 2.14.0, 2.14.1)\n\n[notice] A new release of pip is available: 26.1 -> 26.2.1\n[notice] To update, run: /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/venv/bin/python -m pip install --upgrade pip\nERROR: No matching distribution found for torch==1.12.1+cpu\n\nSETUP FAILED: pip install failed (see setup_log.txt)"
+    },
+    "7b1df62e": {
+      "status": {
+        "nodes": {
+          "Dataset": "done",
+          "Preprocessing": "pending",
+          "Model": "pending",
+          "Training": "done",
+          "Evaluation": "done",
+          "Compare": "pending"
+        },
+        "seeds_done": 3,
+        "seeds_total": 3,
+        "state": "finished"
+      },
+      "results": [
+        {
+          "seed": 0,
+          "status": "done",
+          "metrics": {
+            "accuracy": 96.85
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/log_seed0.txt",
+          "manifest": {
+            "experiment_id": "7b1df62e",
+            "parent_id": null,
+            "repo_commit": "e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb",
+            "config_hash": "517158009cb3",
+            "seed": 0,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/venv/bin/python main.py -lr 0.001 -epochs 1 -batch-size 128 -log-interval 100 -test-interval 200 -save-interval 1000 -dropout 0.5 -embed-dim 128 -kernel-num 10 --out /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/metrics_seed0.json",
+            "started_at": 1791641540.620484,
+            "ended_at": 1791641597.987482,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 1,
+          "status": "done",
+          "metrics": {
+            "accuracy": 97.62
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/log_seed1.txt",
+          "manifest": {
+            "experiment_id": "7b1df62e",
+            "parent_id": null,
+            "repo_commit": "e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb",
+            "config_hash": "517158009cb3",
+            "seed": 1,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/venv/bin/python main.py -lr 0.001 -epochs 1 -batch-size 128 -log-interval 100 -test-interval 200 -save-interval 1000 -dropout 0.5 -embed-dim 128 -kernel-num 10 --out /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/metrics_seed1.json",
+            "started_at": 1791641597.987804,
+            "ended_at": 1791641657.553508,
+            "exit_status": 0
+          }
+        },
+        {
+          "seed": 2,
+          "status": "done",
+          "metrics": {
+            "accuracy": 97.98
+          },
+          "log": "/Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/log_seed2.txt",
+          "manifest": {
+            "experiment_id": "7b1df62e",
+            "parent_id": null,
+            "repo_commit": "e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb",
+            "config_hash": "517158009cb3",
+            "seed": 2,
+            "isolation": "reduced isolation",
+            "python": "3.14.4",
+            "command": "/Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/venv/bin/python main.py -lr 0.001 -epochs 1 -batch-size 128 -log-interval 100 -test-interval 200 -save-interval 1000 -dropout 0.5 -embed-dim 128 -kernel-num 10 --out /Users/vashninadar/Downloads/crisisgrid/data/6601f365/runs/7b1df62e/metrics_seed2.json",
+            "started_at": 1791641657.554267,
+            "ended_at": 1791641718.9391959,
+            "exit_status": 0
+          }
+        }
+      ]
     }
   },
   "paper": {
@@ -100,9 +282,100 @@
     "note": null
   },
   "scan": {
-    "params": {},
+    "params": {
+      "learning_rate": {
+        "kind": "argparse",
+        "name": "learning_rate",
+        "value": 0.001,
+        "file": "main.py",
+        "line": 15,
+        "flag": "lr",
+        "prefix": "-",
+        "injectable": true
+      },
+      "epochs": {
+        "kind": "argparse",
+        "name": "epochs",
+        "value": 1,
+        "file": "main.py",
+        "line": 16,
+        "flag": "epochs",
+        "prefix": "-",
+        "injectable": true
+      },
+      "batch_size": {
+        "kind": "argparse",
+        "name": "batch_size",
+        "value": 128,
+        "file": "main.py",
+        "line": 17,
+        "flag": "batch-size",
+        "prefix": "-",
+        "injectable": true
+      },
+      "log_interval": {
+        "kind": "argparse",
+        "name": "log_interval",
+        "value": 100,
+        "file": "main.py",
+        "line": 18,
+        "flag": "log-interval",
+        "prefix": "-",
+        "injectable": true
+      },
+      "test_interval": {
+        "kind": "argparse",
+        "name": "test_interval",
+        "value": 200,
+        "file": "main.py",
+        "line": 19,
+        "flag": "test-interval",
+        "prefix": "-",
+        "injectable": true
+      },
+      "save_interval": {
+        "kind": "argparse",
+        "name": "save_interval",
+        "value": 1000,
+        "file": "main.py",
+        "line": 20,
+        "flag": "save-interval",
+        "prefix": "-",
+        "injectable": true
+      },
+      "dropout": {
+        "kind": "argparse",
+        "name": "dropout",
+        "value": 0.5,
+        "file": "main.py",
+        "line": 23,
+        "flag": "dropout",
+        "prefix": "-",
+        "injectable": true
+      },
+      "embed_dim": {
+        "kind": "argparse",
+        "name": "embed_dim",
+        "value": 128,
+        "file": "main.py",
+        "line": 24,
+        "flag": "embed-dim",
+        "prefix": "-",
+        "injectable": true
+      },
+      "kernel_num": {
+        "kind": "argparse",
+        "name": "kernel_num",
+        "value": 10,
+        "file": "main.py",
+        "line": 25,
+        "flag": "kernel-num",
+        "prefix": "-",
+        "injectable": true
+      }
+    },
     "entrypoint": "main.py",
-    "run_template": "python main.py --out {out}",
+    "run_template": "python main.py -lr {learning_rate} -epochs {epochs} -batch-size {batch_size} -log-interval {log_interval} -test-interval {test_interval} -save-interval {save_interval} -save-dir {save_dir} -dropout {dropout} -embed-dim {embed_dim} -kernel-num {kernel_num} -kernel-sizes {kernel_sizes} -snapshot {snapshot} -train {train} -test {test} -predict {predict} --out {out}",
     "blocked": null,
     "warnings": [
       "No --seed argparse flag: all seeds will run identically, so seed variance cannot be measured."
@@ -112,12 +385,92 @@
     {
       "param": "batch_size",
       "paper_value": 50,
-      "code_value": null,
-      "status": "ONLY_IN_PAPER",
-      "severity": "medium",
+      "code_value": 128,
+      "status": "MISMATCH",
+      "severity": "high",
       "paper_ref": "p.3: For all datasets we use: recti\ufb01ed linear units, \ufb01lter windows (h) of 3, 4, 5 with 100 feature maps each, dropout rate (p) of 0.5, l2 constraint (s) of 3, and mini-batch size of 50.",
-      "code_ref": null,
-      "explanation": "The paper specifies a batch size of 50, but this parameter is not found in the code."
+      "code_ref": "main.py:17",
+      "explanation": "The paper specifies a batch size of 50, whereas the code uses a batch size of 128."
+    },
+    {
+      "param": "dropout",
+      "paper_value": null,
+      "code_value": 0.5,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:23",
+      "explanation": "The dropout rate is not mentioned in the paper, but the code sets it to 0.5."
+    },
+    {
+      "param": "embed_dim",
+      "paper_value": null,
+      "code_value": 128,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:24",
+      "explanation": "The embedding dimension is not stated in the paper, but the code sets it to 128."
+    },
+    {
+      "param": "epochs",
+      "paper_value": null,
+      "code_value": 1,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:16",
+      "explanation": "The number of epochs is omitted in the paper, but the code specifies 1 epoch."
+    },
+    {
+      "param": "kernel_num",
+      "paper_value": null,
+      "code_value": 10,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:25",
+      "explanation": "The kernel number is not reported in the paper, but the code uses 10."
+    },
+    {
+      "param": "learning_rate",
+      "paper_value": null,
+      "code_value": 0.001,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:15",
+      "explanation": "The learning rate is missing from the paper, but the code configures it as 0.001."
+    },
+    {
+      "param": "log_interval",
+      "paper_value": null,
+      "code_value": 100,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:18",
+      "explanation": "The log interval is not provided in the paper, but the code defines it as 100."
+    },
+    {
+      "param": "save_interval",
+      "paper_value": null,
+      "code_value": 1000,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:20",
+      "explanation": "The save interval is absent from the paper, but the code sets it to 1000."
+    },
+    {
+      "param": "test_interval",
+      "paper_value": null,
+      "code_value": 200,
+      "status": "MISSING",
+      "severity": "high",
+      "paper_ref": null,
+      "code_ref": "main.py:19",
+      "explanation": "The test interval is not mentioned in the paper, but the code sets it to 200."
     }
   ],
   "commit": "e9509c459fa4c9a010e9fcf4c8c0f1a6577d1bcb"
