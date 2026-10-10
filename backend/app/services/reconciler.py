@@ -66,7 +66,17 @@ def reconcile(paper_fields: dict[str, Any], code_params: dict[str, Any],
 
         pref = f"p.{paper[p]['page']}: {paper[p]['quote']}" if in_paper else None
         cref = f"{code[p]['file']}:{code[p]['line']}" if in_code and code[p].get("line") else None
+
+        # If paper describes a schedule (e.g. LR warmup) but code has a fixed value, force MISMATCH
+        schedule_note = paper.get(p, {}).get("schedule_note")
+        if schedule_note and status == "MATCH":
+            status = "MISMATCH"
+
         expl = default_explanation(status, p, pv, cv, pref, cref)
+
+        # Append schedule context so it's visible in the UI
+        if schedule_note:
+            expl += f" Note: paper describes a schedule — {schedule_note.strip()}"
 
         findings.append({
             "param": p, "paper_value": pv, "code_value": cv, "status": status,
@@ -74,6 +84,7 @@ def reconcile(paper_fields: dict[str, Any], code_params: dict[str, Any],
             "paper_ref": pref,
             "code_ref": cref,
             "explanation": expl,
+            **(  {"schedule_note": schedule_note} if schedule_note else {}),
         })
 
     # Optional LLM enrichment if requested and enabled

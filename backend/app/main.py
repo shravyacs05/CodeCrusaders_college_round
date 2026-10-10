@@ -5,7 +5,7 @@ import threading
 import uuid
 from pathlib import Path
 
-from fastapi import BackgroundTasks, Body, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Body, FastAPI, File, Form, HTTPException, Response, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
 from .config import DATA_DIR, TOLERANCE_PP
@@ -59,6 +59,39 @@ def index():
         return f.read_text()
     return ("<h1>CrisisGrid API</h1><p>Frontend not built. Run <code>cd frontend && npm install "
             "&& npm run build</code>, or use <code>npm run dev</code>.</p>")
+
+
+@app.get("/projects/{pid}/paper.pdf")
+def get_paper_pdf(pid: str):
+    f = _p(pid) / "paper.pdf"
+    if not f.exists():
+        raise HTTPException(404, "Paper PDF not found")
+    return FileResponse(f, media_type="application/pdf", filename="paper.pdf")
+
+
+@app.get("/projects/{pid}/paper/pages/{page}")
+def get_paper_page_image(pid: str, page: int):
+    f = _p(pid) / "paper.pdf"
+    if not f.exists():
+        raise HTTPException(404, "Paper PDF not found")
+    try:
+        png_data = paper_analyzer.render_page_png(str(f), page)
+        return Response(content=png_data, media_type="image/png")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"Error rendering page: {e}")
+
+
+@app.get("/projects/{pid}/paper/metadata")
+def get_paper_meta(pid: str):
+    f = _p(pid) / "paper.pdf"
+    if not f.exists():
+        raise HTTPException(404, "Paper PDF not found")
+    try:
+        return paper_analyzer.get_paper_metadata(str(f))
+    except Exception as e:
+        raise HTTPException(500, f"Error getting metadata: {e}")
 
 
 @app.get("/projects/{pid}")

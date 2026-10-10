@@ -34,18 +34,53 @@ def norm(name: str) -> str:
     return normalize_name(name)
 
 
+def _rmtree(path: Path):
+    import os, stat
+    def _onerror(func, p, exc_info=None):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            func(p)
+        except Exception:
+            pass
+    try:
+        shutil.rmtree(path, onexc=lambda fn, p, err: _onerror(fn, p, err))
+    except (TypeError, AttributeError):
+        shutil.rmtree(path, onerror=_onerror)
+    except Exception:
+        pass
+
+
 def get_repo(repo_url: str, dest: Path) -> tuple[Path, str]:
     """Clone a git URL (shallow) or copy a local directory. Returns (path, commit)."""
-    if dest.exists():
-        shutil.rmtree(dest)
-    if Path(repo_url).exists():
-        shutil.copytree(repo_url, dest)
+    clean_url = repo_url.strip()
+    if clean_url.startswith(("github.com/", "gitlab.com/")):
+        clean_url = "https://" + clean_url
+    if Path(clean_url).exists():
+        if dest.exists():
+            _rmtree(dest)
+        shutil.copytree(clean_url, dest)
         return dest, "local-copy"
+
     from git import Repo
 
-    repo = Repo.clone_from(repo_url, dest, depth=1)
+    # If repo already exists and is non-empty, get its commit or refresh
+    if dest.exists() and any(dest.iterdir()):
+        try:
+            if (dest / ".git").exists():
+                r = Repo(dest)
+                commit = r.head.commit.hexsha
+                return dest, commit
+            # Already cloned and stripped of .git
+            return dest, "cached-repo"
+        except Exception:
+            _rmtree(dest)
+
+    if dest.exists():
+        _rmtree(dest)
+
+    repo = Repo.clone_from(clean_url, dest, depth=1)
     commit = repo.head.commit.hexsha
-    shutil.rmtree(dest / ".git", ignore_errors=True)
+    _rmtree(dest / ".git")
     return dest, commit
 
 
@@ -260,6 +295,17 @@ def find_entrypoint(repo_path: Path) -> Path | None:
     return None
 
 
+import re
+
+def safe_parse(source: str) -> ast.AST:
+    """Parse python source with fallback for legacy syntax (e.g. async=True in PyTorch < 1.0)."""
+    try:
+        return ast.parse(source)
+    except SyntaxError:
+        fixed = re.sub(r"\basync\s*=", "non_blocking=", source)
+        return ast.parse(fixed)
+
+
 def scan_repo(repo_path: Path) -> dict[str, Any]:
     """Return params, entrypoint, run template, warnings, or a BLOCKED reason."""
     entry = find_entrypoint(repo_path)
@@ -274,7 +320,7 @@ def scan_repo(repo_path: Path) -> dict[str, Any]:
 
     # 1. Scan entrypoint file for argparse, constructors, constants, seeds
     try:
-        tree = ast.parse(entry.read_text())
+        tree = safe_parse(entry.read_text(encoding="utf-8", errors="ignore"))
         ap_cands, out_flag, tunable_flags = scan_argparse(tree, rel_entry)
         all_candidates.extend(ap_cands)
         all_candidates.extend(scan_constructors(tree, rel_entry))
@@ -288,7 +334,7 @@ def scan_repo(repo_path: Path) -> dict[str, Any]:
         if py_file.name == entry.name:
             continue
         try:
-            py_tree = ast.parse(py_file.read_text())
+            py_tree = safe_parse(py_file.read_text(encoding="utf-8", errors="ignore"))
             all_candidates.extend(scan_constructors(py_tree, py_file.name))
             all_candidates.extend(scan_constants(py_tree, py_file.name))
             all_candidates.extend(scan_seed_calls(py_tree, py_file.name))

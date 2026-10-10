@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ProvenanceBadge from './ProvenanceBadge'
-import { X, CheckCircle2, AlertCircle, Save, Lock, Edit3 } from 'lucide-react'
+import { X, CheckCircle2, AlertCircle, Save, Lock, Edit3, FileText } from 'lucide-react'
 
 export const EDITABLE = ['Dataset', 'Model', 'Training']
 
@@ -8,10 +8,12 @@ export default function EvidencePanel({
   node,
   onEdit,
   onClose,
+  onInspectPaper,
 }: {
   node: any
   onEdit: (node: string, edits: Record<string, any>) => Promise<void>
   onClose: () => void
+  onInspectPaper?: (param: string) => void
 }) {
   const [vals, setVals] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
@@ -86,6 +88,17 @@ export default function EvidencePanel({
               <div className="text-[11px] text-slate-500 leading-relaxed break-words bg-white p-2 rounded-xl border border-slate-100">
                 <b className="text-slate-700">Reference:</b> {v.ref || 'None (never guessed)'}
               </div>
+
+              {onInspectPaper && (v.source === 'paper' || v.ref?.toLowerCase().includes('paper')) && (
+                <button
+                  onClick={() => onInspectPaper(k)}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-xl border border-brand-200 transition-colors w-full justify-center shadow-sm"
+                  title="View citation in paper PDF viewer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-brand-600" />
+                  <span>Locate Citation in Paper PDF</span>
+                </button>
+              )}
 
               {v.injectable === false ? (
                 <div className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-xl flex items-center gap-1">

@@ -31,4 +31,7 @@ export const api = {
     `/projects/${pid}/report${eid ? `?experiment_id=${eid}` : ''}`,
   reportPdfUrl: (pid: string, eid?: string) =>
     `/projects/${pid}/report.pdf${eid ? `?experiment_id=${eid}` : ''}`,
+  paperPdfUrl: (pid: string) => `/projects/${pid}/paper.pdf`,
+  paperPageUrl: (pid: string, page: number) => `/projects/${pid}/paper/pages/${page}`,
+  paperMetadata: (pid: string) => http.get(`/projects/${pid}/paper/metadata`).then(r => r.data),
 }
