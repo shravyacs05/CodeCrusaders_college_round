@@ -61,49 +61,50 @@ export default function Analysis() {
       <div className="space-y-8">
         {/* NeurIPS / ICLR Reproducibility Checklist Scorecard */}
         {checklistData && (
-          <section className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-indigo-900/50">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-indigo-800/40">
+          <section className="bg-gradient-to-br from-blue-50/80 via-white to-slate-50 border border-blue-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-200/80">
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-900/80 px-2.5 py-0.5 rounded-full border border-indigo-700/50">
-                    Conference Standard
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-700 bg-blue-100/90 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-brand-600" />
+                    Conference Audit Standard
                   </span>
-                  <span className="text-xs text-indigo-300 font-mono">NeurIPS / ICLR Audit Protocol</span>
+                  <span className="text-xs text-slate-500 font-mono font-medium">NeurIPS / ICLR Protocol</span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
                   Reproducibility Scorecard & Checklist
                 </h2>
               </div>
-              <div className="flex items-center gap-4 bg-slate-800/60 border border-indigo-700/40 rounded-2xl p-3.5 px-5">
+              <div className="flex items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-3.5 px-5 shadow-xs">
                 <div className="text-right">
-                  <div className="text-xs text-slate-400 font-medium">Compliance Index</div>
-                  <div className="text-2xl font-black text-indigo-400 font-mono">{checklistData.score_pct}%</div>
+                  <div className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">Compliance Index</div>
+                  <div className="text-2xl font-black text-brand-600 font-mono">{checklistData.score_pct}%</div>
                 </div>
-                <div className="h-9 w-px bg-slate-700" />
+                <div className="h-9 w-px bg-slate-200" />
                 <div>
-                  <div className="text-xs text-slate-400 font-medium">Grade</div>
-                  <div className="text-sm font-bold text-emerald-400">{checklistData.grade}</div>
+                  <div className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">Grade</div>
+                  <div className="text-sm font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">{checklistData.grade}</div>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {checklistData.checklist?.map((item: any, idx: number) => (
-                <div key={idx} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-600/40 transition-colors">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="text-xs font-semibold text-slate-200 leading-snug">
+                <div key={idx} className="bg-white border border-slate-200/90 rounded-2xl p-4 flex flex-col justify-between hover:border-brand-300 hover:shadow-xs transition-all">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="text-xs font-extrabold text-slate-900 leading-snug">
                       {item.question}
                     </div>
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 border ${item.status === 'PASS'
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shrink-0 border ${item.status === 'PASS'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         : item.status === 'WARN'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                          : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
                       }`}>
                       {item.status}
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-mono bg-slate-900/60 p-2 rounded-lg truncate" title={item.evidence}>
+                  <div className="text-[11px] text-slate-600 font-mono bg-slate-50 border border-slate-200/70 p-2.5 rounded-xl truncate" title={item.evidence}>
                     {item.evidence}
                   </div>
                 </div>
@@ -111,6 +112,7 @@ export default function Analysis() {
             </div>
           </section>
         )}
+
 
         {/* Interactive Data Leakage & Contamination Visualizer */}
         <section className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
