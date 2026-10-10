@@ -201,8 +201,8 @@ export default function ProjectLayout() {
                 setSplitView(!splitView)
               }}
               className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-semibold shadow-sm transition-all border ${splitView
-                  ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
-                  : 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-brand-700 border-blue-200/80 hover:shadow'
+                ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
+                : 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-brand-700 border-blue-200/80 hover:shadow'
                 }`}
               title="Toggle side-by-side split screen view with Paper PDF viewer"
             >

@@ -96,10 +96,10 @@ export default function Analysis() {
                       {item.question}
                     </div>
                     <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shrink-0 border ${item.status === 'PASS'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : item.status === 'WARN'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : item.status === 'WARN'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-rose-50 text-rose-700 border-rose-200'
                       }`}>
                       {item.status}
                     </span>
@@ -151,8 +151,8 @@ export default function Analysis() {
               <div className="text-slate-400 font-bold hidden md:block">→</div>
 
               <div className={`p-3 rounded-xl border flex-1 w-full ${leakageData?.findings?.some((f: any) => f.rule === 'preprocessing_fit_before_split')
-                  ? 'bg-rose-50 border-rose-300 text-rose-900'
-                  : 'bg-white border-slate-200'
+                ? 'bg-rose-50 border-rose-300 text-rose-900'
+                : 'bg-white border-slate-200'
                 }`}>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 2: Train/Test Split</div>
                 <div className="text-xs font-bold mt-0.5">
@@ -293,126 +293,126 @@ export default function Analysis() {
         </section>
 
 
-              {/* Extracted Hyperparameters Table */}
-              <section className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                      Extracted Paper Hyperparameters
-                    </h2>
-                    <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                      PyMuPDF deterministic extraction • Method: <span className="font-extrabold text-slate-800">{paper?.method || 'regex'}</span>
-                      {paper?.note && <span> • {paper.note}</span>}
-                    </p>
-                  </div>
+        {/* Extracted Hyperparameters Table */}
+        <section className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                Extracted Paper Hyperparameters
+              </h2>
+              <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                PyMuPDF deterministic extraction • Method: <span className="font-extrabold text-slate-800">{paper?.method || 'regex'}</span>
+                {paper?.note && <span> • {paper.note}</span>}
+              </p>
+            </div>
 
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Filter parameters..."
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-full pl-8 pr-3 py-1.5 text-xs text-slate-800 font-semibold placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="overflow-hidden border border-slate-200/90 rounded-2xl">
-                  <table className="w-full text-sm text-left border-collapse">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                      <tr>
-                        <th className="p-3.5">Parameter</th>
-                        <th className="p-3.5">Extracted Value</th>
-                        <th className="p-3.5">Provenance</th>
-                        <th className="p-3.5">Citation & Verbatim Quote</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {filteredFields.map(([k, f]) => {
-                        const finding = findings.find(x => x.param === k)
-                        return (
-                          <tr key={k} className="hover:bg-slate-50/60 transition-colors align-top">
-                            <td className="p-3.5 font-mono font-extrabold text-xs text-slate-900">
-                              {k}
-                            </td>
-                            <td className="p-3.5 font-mono font-bold text-xs text-slate-900">
-                              {f.value ?? (
-                                <i className="text-slate-400 font-sans font-normal">
-                                  {f.claimed_value != null ? `rejected (${f.claimed_value})` : 'missing'}
-                                </i>
-                              )}
-                            </td>
-                            <td className="p-3.5">
-                              <ProvenanceBadge source={f.source} />
-                            </td>
-                            <td className="p-3.5 text-xs text-slate-700">
-                              {f.quote ? (
-                                <div className="space-y-1.5">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-extrabold text-brand-700 bg-brand-50 px-2 py-0.5 rounded text-[10px] border border-brand-200">
-                                      Page {f.page}
-                                    </span>
-                                    <button
-                                      onClick={() =>
-                                        openPaperViewer?.({
-                                          id: k,
-                                          param: k,
-                                          value: f.value,
-                                          codeValue: finding?.code_value,
-                                          status: finding?.status,
-                                          page: f.page || 1,
-                                          bbox: f.bbox,
-                                          quote: f.quote,
-                                        })
-                                      }
-                                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded border border-brand-200 transition-colors"
-                                      title="Highlight in Paper PDF"
-                                    >
-                                      <FileText className="w-3 h-3" />
-                                      <span>Locate in PDF (p.{f.page})</span>
-                                    </button>
-                                  </div>
-                                  <p className="font-semibold italic text-slate-800">“{f.quote}”</p>
-                                </div>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                              {paper?.flags?.[k] && (
-                                <div className="text-amber-800 font-bold text-[11px] mt-1.5 flex items-center gap-1 bg-amber-50 p-1.5 rounded-lg border border-amber-200">
-                                  <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-                                  <span>Unverified extraction: quote missing on cited page</span>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-
-                  </table>
-                </div>
-              </section>
-
-              {/* Parameter Reconciliation Section */}
-              <section className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-brand-700 bg-blue-50 px-3 py-1 rounded-full border border-brand-200">
-                      Reconciler Matrix
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                    Parameter Reconciliation (Paper vs. Repository Code)
-                  </h2>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    Normalized aliases (lr, num_epochs, bs, seed, test_size) classified into MATCH, MISMATCH, ONLY_IN_PAPER, or ONLY_IN_CODE.
-                  </p>
-                </div>
-                <DiffTable findings={findings} onInspectPaper={handleInspectParam} />
-              </section>
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Filter parameters..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-full pl-8 pr-3 py-1.5 text-xs text-slate-800 font-semibold placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:bg-white"
+              />
+            </div>
           </div>
+
+          <div className="overflow-hidden border border-slate-200/90 rounded-2xl">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-slate-50 border-b border-slate-200 text-xs font-extrabold uppercase tracking-wider text-slate-600">
+                <tr>
+                  <th className="p-3.5">Parameter</th>
+                  <th className="p-3.5">Extracted Value</th>
+                  <th className="p-3.5">Provenance</th>
+                  <th className="p-3.5">Citation & Verbatim Quote</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {filteredFields.map(([k, f]) => {
+                  const finding = findings.find(x => x.param === k)
+                  return (
+                    <tr key={k} className="hover:bg-slate-50/60 transition-colors align-top">
+                      <td className="p-3.5 font-mono font-extrabold text-xs text-slate-900">
+                        {k}
+                      </td>
+                      <td className="p-3.5 font-mono font-bold text-xs text-slate-900">
+                        {f.value ?? (
+                          <i className="text-slate-400 font-sans font-normal">
+                            {f.claimed_value != null ? `rejected (${f.claimed_value})` : 'missing'}
+                          </i>
+                        )}
+                      </td>
+                      <td className="p-3.5">
+                        <ProvenanceBadge source={f.source} />
+                      </td>
+                      <td className="p-3.5 text-xs text-slate-700">
+                        {f.quote ? (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-brand-700 bg-brand-50 px-2 py-0.5 rounded text-[10px] border border-brand-200">
+                                Page {f.page}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  openPaperViewer?.({
+                                    id: k,
+                                    param: k,
+                                    value: f.value,
+                                    codeValue: finding?.code_value,
+                                    status: finding?.status,
+                                    page: f.page || 1,
+                                    bbox: f.bbox,
+                                    quote: f.quote,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded border border-brand-200 transition-colors"
+                                title="Highlight in Paper PDF"
+                              >
+                                <FileText className="w-3 h-3" />
+                                <span>Locate in PDF (p.{f.page})</span>
+                              </button>
+                            </div>
+                            <p className="font-semibold italic text-slate-800">“{f.quote}”</p>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                        {paper?.flags?.[k] && (
+                          <div className="text-amber-800 font-bold text-[11px] mt-1.5 flex items-center gap-1 bg-amber-50 p-1.5 rounded-lg border border-amber-200">
+                            <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                            <span>Unverified extraction: quote missing on cited page</span>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+
+            </table>
+          </div>
+        </section>
+
+        {/* Parameter Reconciliation Section */}
+        <section className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-brand-700 bg-blue-50 px-3 py-1 rounded-full border border-brand-200">
+                Reconciler Matrix
+              </span>
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              Parameter Reconciliation (Paper vs. Repository Code)
+            </h2>
+            <p className="text-xs font-semibold text-slate-500 mt-0.5">
+              Normalized aliases (lr, num_epochs, bs, seed, test_size) classified into MATCH, MISMATCH, ONLY_IN_PAPER, or ONLY_IN_CODE.
+            </p>
+          </div>
+          <DiffTable findings={findings} onInspectPaper={handleInspectParam} />
+        </section>
       </div>
+    </div>
   )
 }
 
