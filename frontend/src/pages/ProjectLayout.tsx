@@ -10,7 +10,10 @@ import {
   AlertTriangle,
   ChevronRight,
   GitBranch,
-  Columns
+  Columns,
+  Sparkles,
+  Wand2,
+  Code2
 } from 'lucide-react'
 import { api, errMsg } from '../api/client'
 import PaperViewer, { EvidenceItem } from '../components/PaperViewer'
@@ -180,8 +183,18 @@ export default function ProjectLayout() {
             </div>
           </div>
 
-          {/* Actions: Inspect Paper PDF, Version Switcher, and Self-Healing Indicator */}
+          {/* Actions: Export Jupyter, Split View, Version Switcher, and Self-Healing Indicator */}
           <div className="flex items-center gap-3 flex-wrap">
+            <a
+              href={api.notebookUrl(pid, eid)}
+              download
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs transition-all hover:scale-105"
+              title="Download executable Jupyter Notebook (.ipynb) for local or Google Colab execution"
+            >
+              <Code2 className="w-4 h-4 text-emerald-600" />
+              <span>Export Jupyter (.ipynb)</span>
+            </a>
+
             <button
               onClick={() => {
                 setActiveItem(evidenceItems[0] || null)
@@ -202,6 +215,7 @@ export default function ProjectLayout() {
                 </span>
               )}
             </button>
+
 
             {proj.experiments.length > 0 && (
               <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-2xl">

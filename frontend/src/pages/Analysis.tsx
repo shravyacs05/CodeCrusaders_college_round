@@ -223,77 +223,73 @@ export default function Analysis() {
 
         {/* Decent, Cohesive, Elegant Ground Truth Claim Card (No weird dark box!) */}
         <section className="bg-gradient-to-br from-blue-50/80 via-white to-slate-50 border border-blue-200/80 rounded-3xl p-6 sm:p-7 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <span className="text-xs font-extrabold uppercase tracking-wider text-brand-700 bg-blue-100/80 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-              Ground Truth Claim
-              {/* Target Claim To Verify */}
-              <section className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
-                    Target Ground Truth
-                  </span>
-                  {claim?.page && (
-                    <span className="text-xs font-mono font-bold text-slate-700 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
-                      PDF Page {claim.page}
-                    </span>
-                  )}
-                  {claim?.value != null && claim.quote && (
-                    <button
-                      onClick={() =>
-                        openPaperViewer?.({
-                          id: 'claim',
-                          param: `CLAIM: ${(claim.metric || 'ACCURACY').toUpperCase()}`,
-                          value: `${claim.value}${claim.percent ? '%' : ''}`,
-                          page: claim.page || 1,
-                          bbox: claim.bbox,
-                          quote: claim.quote,
-                        })
-                      }
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition-colors shadow-sm"
-                      title="Inspect exact bounding box in Paper PDF"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-brand-600" />
-                      <span>Locate Quote in PDF (Page {claim.page})</span>
-                    </button>
-                  )}
+              Target Ground Truth
+            </span>
+            {claim?.page && (
+              <span className="text-xs font-mono font-bold text-slate-700 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">
+                PDF Page {claim.page}
+              </span>
+            )}
+            {claim?.value != null && claim.quote && (
+              <button
+                onClick={() =>
+                  openPaperViewer?.({
+                    id: 'claim',
+                    param: `CLAIM: ${(claim.metric || 'ACCURACY').toUpperCase()}`,
+                    value: `${claim.value}${claim.percent ? '%' : ''}`,
+                    page: claim.page || 1,
+                    bbox: claim.bbox,
+                    quote: claim.quote,
+                  })
+                }
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition-colors shadow-sm"
+                title="Inspect exact bounding box in Paper PDF"
+              >
+                <FileText className="w-3.5 h-3.5 text-brand-600" />
+                <span>Locate Quote in PDF (Page {claim.page})</span>
+              </button>
+            )}
+          </div>
+
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mb-4">
+            Published Paper Claim to Verify
+          </h2>
+
+          {claim?.value != null ? (
+            <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+                    Target Metric & Value
+                  </div>
+                  <div className="text-3xl sm:text-4xl font-extrabold text-brand-600 font-mono tracking-tight">
+                    {claim.metric.toUpperCase()} = {claim.value}
+                    {claim.percent ? '%' : ''}
+                  </div>
                 </div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Verbatim PDF Citation Verified
+                </span>
+              </div>
 
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mb-4">
-                  Published Paper Claim to Verify
-                </h2>
+              {claim.quote && (
+                <div className="flex items-start gap-3 text-xs text-slate-700 font-semibold italic bg-slate-50 border border-slate-200/80 rounded-xl p-4">
+                  <Quote className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">"{claim.quote}"</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-xs font-bold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>No verified claim found in PDF text. Metric verification will remain blocked.</span>
+            </div>
+          )}
+        </section>
 
-                {claim?.value != null ? (
-                  <div className="bg-white border border-blue-100 rounded-2xl p-5 shadow-sm space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
-                      <div>
-                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
-                          Target Metric & Value
-                        </div>
-                        <div className="text-3xl sm:text-4xl font-extrabold text-brand-600 font-mono tracking-tight">
-                          {claim.metric.toUpperCase()} = {claim.value}
-                          {claim.percent ? '%' : ''}
-                        </div>
-                      </div>
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Verbatim PDF Citation Verified
-                      </span>
-                    </div>
-
-                    {claim.quote && (
-                      <div className="flex items-start gap-3 text-xs text-slate-700 font-semibold italic bg-slate-50 border border-slate-200/80 rounded-xl p-4">
-                        <Quote className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
-                        <span className="leading-relaxed">"{claim.quote}"</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-xs font-bold flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                    <span>No verified claim found in PDF text. Metric verification will remain blocked.</span>
-                  </div>
-                )}
-              </section>
 
               {/* Extracted Hyperparameters Table */}
               <section className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
@@ -331,65 +327,30 @@ export default function Analysis() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
-                      {filteredFields.map(([k, f]) => (
-                        <tr key={k} className="hover:bg-slate-50/60 transition-colors align-top">
-                          <td className="p-3.5 font-mono font-extrabold text-xs text-slate-900">
-                            {k}
-                          </td>
-                          <td className="p-3.5 font-mono font-bold text-xs text-slate-900">
-                            {f.value ?? (
-                              <i className="text-slate-400 font-sans font-normal">
-                                {f.claimed_value != null ? `rejected (${f.claimed_value})` : 'missing'}
-                              </i>
-                            )}
-                          </td>
-                          <td className="p-3.5">
-                            <ProvenanceBadge source={f.source} />
-                          </td>
-                          <td className="p-3.5 text-xs text-slate-700">
-                            {f.quote ? (
-                              <div className="space-y-1">
-                                <span className="font-extrabold text-brand-700 bg-brand-50 px-2 py-0.5 rounded text-[10px] inline-block mb-1 border border-brand-200">
-                                  Page {f.page}
-                                </span>
-                                <p className="font-semibold italic text-slate-800">“{f.quote}”</p>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400">—</span>
-                            )}
-                            {paper?.flags?.[k] && (
-                              <div className="text-amber-800 font-bold text-[11px] mt-1.5 flex items-center gap-1 bg-amber-50 p-1.5 rounded-lg border border-amber-200">
-                                <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-                                <span>Unverified extraction: quote missing on cited page</span>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                      <tbody className="divide-y divide-slate-100">
-                        {fields.map(([k, f]) => {
-                          const finding = findings.find(x => x.param === k)
-                          return (
-                            <tr key={k} className="hover:bg-slate-50/50 transition-colors align-top">
-                              <td className="p-3.5 font-mono font-semibold text-xs text-slate-900">
-                                {k}
-                              </td>
-                              <td className="p-3.5 font-mono text-xs text-slate-800">
-                                {f.value ?? (
-                                  <i className="text-slate-400 font-sans">
-                                    {f.claimed_value != null ? `rejected (${f.claimed_value})` : 'missing'}
-                                  </i>
-                                )}
-                              </td>
-                              <td className="p-3.5">
-                                <ProvenanceBadge source={f.source} />
-                              </td>
-                              <td className="p-3.5 text-xs text-slate-600">
-                                {f.quote ? (
-                                  <div className="space-y-1">
-                                    <div>
-                                      <span className="font-medium text-slate-700">p.{f.page}:</span> “{f.quote}”
-                                    </div>
+                      {filteredFields.map(([k, f]) => {
+                        const finding = findings.find(x => x.param === k)
+                        return (
+                          <tr key={k} className="hover:bg-slate-50/60 transition-colors align-top">
+                            <td className="p-3.5 font-mono font-extrabold text-xs text-slate-900">
+                              {k}
+                            </td>
+                            <td className="p-3.5 font-mono font-bold text-xs text-slate-900">
+                              {f.value ?? (
+                                <i className="text-slate-400 font-sans font-normal">
+                                  {f.claimed_value != null ? `rejected (${f.claimed_value})` : 'missing'}
+                                </i>
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              <ProvenanceBadge source={f.source} />
+                            </td>
+                            <td className="p-3.5 text-xs text-slate-700">
+                              {f.quote ? (
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-extrabold text-brand-700 bg-brand-50 px-2 py-0.5 rounded text-[10px] border border-brand-200">
+                                      Page {f.page}
+                                    </span>
                                     <button
                                       onClick={() =>
                                         openPaperViewer?.({
@@ -410,20 +371,23 @@ export default function Analysis() {
                                       <span>Locate in PDF (p.{f.page})</span>
                                     </button>
                                   </div>
-                                ) : (
-                                  <span className="text-slate-400">—</span>
-                                )}
-                                {paper?.flags?.[k] && (
-                                  <div className="text-amber-600 font-semibold text-[11px] mt-1 flex items-center gap-1">
-                                    <AlertTriangle className="w-3 h-3" />
-                                    <span>Unverified extraction: quote not found verbatim on page</span>
-                                  </div>
-                                )}
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
+                                  <p className="font-semibold italic text-slate-800">“{f.quote}”</p>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                              {paper?.flags?.[k] && (
+                                <div className="text-amber-800 font-bold text-[11px] mt-1.5 flex items-center gap-1 bg-amber-50 p-1.5 rounded-lg border border-amber-200">
+                                  <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                                  <span>Unverified extraction: quote missing on cited page</span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+
                   </table>
                 </div>
               </section>
@@ -446,5 +410,7 @@ export default function Analysis() {
                 <DiffTable findings={findings} onInspectPaper={handleInspectParam} />
               </section>
           </div>
-          )
+      </div>
+  )
 }
+

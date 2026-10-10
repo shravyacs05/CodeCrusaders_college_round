@@ -9,7 +9,7 @@ from fastapi import BackgroundTasks, Body, FastAPI, File, Form, HTTPException, R
 from fastapi.responses import FileResponse, HTMLResponse
 
 from .config import DATA_DIR, TOLERANCE_PP
-from .services import (checklist_auditor, auto_healer, leakage_detector,
+from .services import (checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
                        paper_analyzer, reconciler, repo_scanner, report, runner,
                        spec_builder, verifier, versioning)
 
@@ -412,4 +412,22 @@ def auto_heal_experiment(eid: str):
         raise HTTPException(400, res.get("error", "Failed to auto-heal"))
     save(pid, proj)
     return res
+
+
+@app.get("/projects/{pid}/notebook")
+def get_project_notebook(pid: str, experiment_id: str | None = None):
+    proj = load(pid)
+    exps = proj.get("experiments", {})
+    if not exps:
+        raise HTTPException(400, "Project has not been analyzed yet")
+    exp = exps[experiment_id] if experiment_id and experiment_id in exps else max(exps.values(), key=lambda e: e.get("version", 1))
+    nb_dict = notebook_exporter.generate_notebook(exp.get("spec", {}), proj.get("name", "Reproduction Project"))
+    nb_json = json.dumps(nb_dict, indent=2)
+    filename = f"{proj.get('name', 'project').lower().replace(' ', '_')}_reproduction.ipynb"
+    return Response(
+        content=nb_json,
+        media_type="application/x-ipynb+json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
 

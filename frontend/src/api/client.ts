@@ -31,6 +31,8 @@ export const api = {
     `/projects/${pid}/report${eid ? `?experiment_id=${eid}` : ''}`,
   reportPdfUrl: (pid: string, eid?: string) =>
     `/projects/${pid}/report.pdf${eid ? `?experiment_id=${eid}` : ''}`,
+  notebookUrl: (pid: string, eid?: string) =>
+    `/projects/${pid}/notebook${eid ? `?experiment_id=${eid}` : ''}`,
   checklist: (pid: string, eid?: string) =>
     http.get(`/projects/${pid}/checklist`, { params: { experiment_id: eid } }).then(r => r.data),
   leakage: (pid: string) =>
@@ -43,3 +45,4 @@ export const api = {
   paperPageUrl: (pid: string, page: number) => `/projects/${pid}/paper/pages/${page}`,
   paperMetadata: (pid: string) => http.get(`/projects/${pid}/paper/metadata`).then(r => r.data),
 }
+
