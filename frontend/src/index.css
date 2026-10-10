@@ -39,6 +39,13 @@
   box-shadow: 0 0 35px rgba(43, 102, 255, 0.25), inset 0 0 20px rgba(43, 102, 255, 0.15);
 }
 
+.glass-card-white {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
 .glass-pill {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
@@ -50,6 +57,24 @@
   background: rgba(239, 246, 255, 0.9);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(191, 219, 254, 0.8);
+}
+
+/* Micro-animations and glows */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.hover-glow {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(43, 102, 255, 0.25);
 }
 
 /* Custom crisp scrollbar */

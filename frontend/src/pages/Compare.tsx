@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, errMsg } from '../api/client'
 import { useProject } from './ProjectLayout'
-import { GitCompare, ArrowRight, CheckCircle2, AlertCircle, Sliders } from 'lucide-react'
+import { GitCompare, ArrowRight, CheckCircle2, AlertCircle, Sliders, GitBranch } from 'lucide-react'
 
 export default function Compare() {
   const { proj, eid } = useProject()
@@ -26,7 +26,7 @@ export default function Compare() {
 
   const renderSelector = (val: string, onChange: (s: string) => void) => (
     <select
-      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-medium text-slate-800 focus:outline-none focus:border-brand-500 shadow-sm"
+      className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-semibold text-slate-800 focus:outline-none focus:border-brand-500 shadow-sm"
       value={val}
       onChange={e => onChange(e.target.value)}
     >
@@ -42,7 +42,7 @@ export default function Compare() {
     return (
       <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center max-w-lg mx-auto shadow-sm">
         <div className="w-12 h-12 rounded-2xl bg-blue-50 text-brand-600 flex items-center justify-center mx-auto mb-3">
-          <Sliders className="w-6 h-6" />
+          <GitCompare className="w-6 h-6" />
         </div>
         <h3 className="text-base font-extrabold text-slate-900 mb-1">Single Version Detected</h3>
         <p className="text-xs text-slate-500 leading-relaxed mb-4">
@@ -53,21 +53,25 @@ export default function Compare() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-8">
       {/* Version Selector Banner */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
-            Version Differencing
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-200 flex items-center gap-1.5 w-fit mb-2">
+            <GitBranch className="w-3.5 h-3.5 text-brand-500" />
+            Causality Differencing
           </span>
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mt-1">
-            Compare Experiment Specs
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Compare Spec Versions
           </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Pinpoint hyperparameter diffs between baseline and child execution runs.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+        <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
           {renderSelector(a, setA)}
-          <ArrowRight className="w-4 h-4 text-slate-400" />
+          <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
           {renderSelector(b, setB)}
         </div>
       </div>
@@ -83,8 +87,8 @@ export default function Compare() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Config Changes Card */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-4">
                 Configuration Deltas
               </h3>
               {res.changes.length === 0 ? (
@@ -94,17 +98,17 @@ export default function Compare() {
                   <table className="w-full text-xs text-left border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200 font-bold uppercase tracking-wider text-slate-500">
                       <tr>
-                        <th className="p-3">Parameter</th>
-                        <th className="p-3">Baseline (From)</th>
-                        <th className="p-3">Modified (To)</th>
+                        <th className="p-3.5">Parameter</th>
+                        <th className="p-3.5">Baseline (From)</th>
+                        <th className="p-3.5">Modified (To)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-mono">
                       {res.changes.map((c: any) => (
-                        <tr key={c.param} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-semibold text-slate-900">{c.param}</td>
-                          <td className="p-3 text-slate-600">{String(c.from ?? 'MISSING')}</td>
-                          <td className="p-3 text-brand-600 font-bold">{String(c.to ?? 'MISSING')}</td>
+                        <tr key={c.param} className="hover:bg-slate-50/60">
+                          <td className="p-3.5 font-bold text-slate-900">{c.param}</td>
+                          <td className="p-3.5 text-slate-600">{String(c.from ?? 'MISSING')}</td>
+                          <td className="p-3.5 text-brand-600 font-extrabold">{String(c.to ?? 'MISSING')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -114,14 +118,14 @@ export default function Compare() {
             </div>
 
             {/* Metric Difference Card */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-2">
+                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3">
                   Empirical Metric Impact
                 </h3>
                 {res.metric_delta_pp != null ? (
                   <div className="pt-2">
-                    <div className="text-3xl font-extrabold font-mono text-slate-900">
+                    <div className="text-4xl font-extrabold font-mono text-slate-900">
                       {(typeof res.metric_delta_pp === 'number'
                         ? res.metric_delta_pp
                         : res.metric_delta_pp.accuracy_pp) >= 0
@@ -133,7 +137,7 @@ export default function Compare() {
                       ).toFixed(2)}{' '}
                       pp
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-2">
                       Percentage point shift observed in execution metrics.
                     </p>
                   </div>
@@ -144,12 +148,13 @@ export default function Compare() {
                 )}
               </div>
 
-              {/* Causality Note */}
-              <div className="mt-4 p-3.5 rounded-2xl bg-blue-50/80 border border-blue-100 text-xs text-slate-700">
-                <span className="font-semibold text-brand-900">{res.note}</span>
+              {/* Causality Verdict Banner */}
+              <div className="mt-6 p-4 rounded-2xl bg-blue-50/80 border border-blue-100 text-xs text-slate-700">
+                <span className="font-bold text-brand-900 block">{res.note}</span>
                 {res.single_factor && (
-                  <span className="block mt-1 font-bold text-emerald-700">
-                    ✓ Verified single-factor causality: exactly one parameter modified.
+                  <span className="block mt-1 font-bold text-emerald-700 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Verified single-factor causality: exactly one parameter modified between runs.
                   </span>
                 )}
               </div>

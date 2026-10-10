@@ -11,3 +11,4 @@ numpy
 reportlab
 pyyaml
 python-dotenv
+httpx
