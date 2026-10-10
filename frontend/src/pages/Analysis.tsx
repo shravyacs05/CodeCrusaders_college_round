@@ -58,8 +58,7 @@ export default function Analysis() {
 
   return (
     <div className="space-y-8 pb-8">
-      <div className="space-y-8">
-        {/* NeurIPS / ICLR Reproducibility Checklist Scorecard */}
+      {/* NeurIPS / ICLR Reproducibility Checklist Scorecard */}
         {checklistData && (
           <section className="bg-gradient-to-br from-blue-50/80 via-white to-slate-50 border border-blue-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-200/80">
@@ -411,7 +410,6 @@ export default function Analysis() {
           </div>
           <DiffTable findings={findings} onInspectPaper={handleInspectParam} />
         </section>
-      </div>
     </div>
   )
 }

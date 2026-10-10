@@ -12,7 +12,6 @@ import {
   GitBranch,
   Columns,
   Sparkles,
-  Wand2,
   Code2
 } from 'lucide-react'
 import { api, errMsg } from '../api/client'
