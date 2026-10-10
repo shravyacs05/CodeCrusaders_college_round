@@ -176,10 +176,14 @@ if getattr(args, 'out', None):
                 patched += "\n" + writer_code
             target_path.write_text(patched, encoding="utf-8")
 
+    diff_notes = [
+        f"Self-healed: {diagnosis['title']} ({diagnosis['remedy']})"
+    ]
+
     # Fast validation tuning on CPU: reduce 200 epochs to 1 if applicable
     if "epochs" in new_spec.get("params", {}) and (new_spec["params"]["epochs"].get("value") or 0) > 1:
         new_spec["params"]["epochs"]["value"] = 1
-        new_spec["diff_from_parent"].append("Adjusted epochs to 1 for rapid CPU verification")
+        diff_notes.append("Adjusted epochs to 1 for rapid CPU verification")
 
     # Build new experiment spec
     param_str = "-".join(f"{k}:{v.get('value')}" for k, v in sorted(new_spec["params"].items()))
@@ -190,9 +194,7 @@ if getattr(args, 'out', None):
         "parent_id": exp_id,
         "version": parent_exp.get("version", 1) + 1,
         "spec": new_spec,
-        "diff_from_parent": [
-            f"Self-healed: {diagnosis['title']} ({diagnosis['remedy']})"
-        ],
+        "diff_from_parent": diff_notes,
         "config_hash": config_hash,
         "healed_from": exp_id,
         "healing_diagnosis": diagnosis,
