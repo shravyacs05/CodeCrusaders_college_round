@@ -9,9 +9,9 @@ import {
   Sliders,
   ChevronDown,
   ChevronUp,
-  Info,
-  CheckCircle2,
-  AlertTriangle
+  FileSearch,
+  Zap,
+  Target,
 } from 'lucide-react'
 
 export interface XAIAttribution {
@@ -52,6 +52,119 @@ export interface XAIReport {
   }
 }
 
+function AttributionRow({
+  attr,
+  maxShare,
+  onInspectParam,
+}: {
+  attr: XAIAttribution
+  maxShare: number
+  onInspectParam?: (param: string) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const isDrag = attr.direction === 'drag'
+  const isPositive = attr.direction === 'positive' || attr.direction === 'surplus'
+  const barColor = isDrag
+    ? 'from-rose-500 to-orange-400'
+    : isPositive
+    ? 'from-emerald-500 to-teal-400'
+    : 'from-violet-500 to-indigo-400'
+  const impactColor = isDrag ? 'text-rose-600 bg-rose-50 border-rose-200' : isPositive ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'
+  const statusColor =
+    attr.status === 'MISMATCH'
+      ? 'bg-amber-100 text-amber-700 border-amber-200'
+      : attr.status === 'MISSING'
+      ? 'bg-rose-100 text-rose-700 border-rose-200'
+      : attr.status === 'VARIANCE'
+      ? 'bg-slate-100 text-slate-500 border-slate-200'
+      : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+
+  const barWidth = maxShare > 0 ? (attr.share_pct / maxShare) * 100 : attr.share_pct
+
+  return (
+    <div className="group rounded-2xl border border-slate-200/80 bg-white hover:border-violet-200 hover:shadow-sm transition-all duration-200">
+      <div className="p-4">
+        {/* Row header */}
+        <div className="flex items-center gap-3">
+          {/* Rank + bar column */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="text-sm font-bold text-slate-800">{attr.label}</span>
+              {attr.status && (
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusColor}`}>
+                  {attr.status}
+                </span>
+              )}
+              {attr.paper_value !== undefined && attr.code_value !== undefined && attr.status !== 'VARIANCE' && (
+                <div className="flex items-center gap-1 text-[11px] font-mono ml-1">
+                  <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">{String(attr.code_value ?? '—')}</span>
+                  <ArrowRight className="w-3 h-3 text-slate-400" />
+                  <span className="bg-violet-100 px-1.5 py-0.5 rounded text-violet-700">{String(attr.paper_value ?? '—')}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Bar */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all duration-700`}
+                  style={{ width: `${Math.max(barWidth, 5)}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-slate-500 tabular-nums w-10 text-right shrink-0">
+                {attr.share_pct}%
+              </span>
+            </div>
+          </div>
+
+          {/* Impact badge */}
+          <div className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold ${impactColor}`}>
+            {isDrag ? <TrendingDown className="w-3.5 h-3.5" /> : isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+            {attr.impact_pp >= 0 ? '+' : ''}{attr.impact_pp.toFixed(2)} pp
+          </div>
+
+          {/* Expand toggle */}
+          {(attr.ai_insight || attr.explanation) && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors cursor-pointer"
+            >
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
+        </div>
+
+        {/* Expandable detail */}
+        {expanded && (
+          <div className="mt-3 pt-3 border-t border-slate-100 space-y-2 animate-in slide-in-from-top-1 duration-200">
+            {attr.ai_insight && (
+              <div className="flex items-start gap-2 bg-violet-50 rounded-xl px-3 py-2.5 border border-violet-100">
+                <Sparkles className="w-3.5 h-3.5 text-violet-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-violet-900 leading-relaxed">{attr.ai_insight}</p>
+              </div>
+            )}
+            {attr.explanation && (
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-3">{attr.explanation}</p>
+                {onInspectParam && attr.paper_ref && (
+                  <button
+                    onClick={() => onInspectParam(attr.param)}
+                    className="shrink-0 flex items-center gap-1 text-[10px] font-semibold text-violet-600 hover:text-violet-800 bg-violet-50 hover:bg-violet-100 px-2 py-1 rounded-lg border border-violet-200 transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    <FileSearch className="w-3 h-3" />
+                    View in PDF
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function XAIAttributionCard({
   xai,
   unit = '%',
@@ -63,275 +176,161 @@ export default function XAIAttributionCard({
 }) {
   const [showAll, setShowAll] = useState(false)
 
-  if (!xai || !xai.available) {
-    return null
-  }
+  if (!xai || !xai.available) return null
 
   const attributions = xai.attributions || []
   const cf = xai.counterfactual
   const isReproduced = xai.status === 'REPRODUCED'
   const visibleAttributions = showAll ? attributions : attributions.slice(0, 4)
+  const maxShare = attributions[0]?.share_pct ?? 100
+
+  const gapNum = xai.gap_pp ?? 0
+  const gapPositive = gapNum >= 0
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 flex items-center gap-1.5 shadow-2xs">
-              <Brain className="w-3.5 h-3.5 text-purple-600 animate-pulse" />
-              Explainable AI (XAI)
-            </span>
-            {xai.ai_enriched ? (
-              <span className="text-[10px] font-bold tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-500" />
-                AI Research Synthesis
+    <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+
+      {/* ─── Header ─── */}
+      <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-5 sm:px-7">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center">
+                <Brain className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">
+                Explainable AI · Root-Cause Analysis
               </span>
-            ) : (
-              <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                Sensitivity Attribution
-              </span>
+              {xai.ai_enriched && (
+                <span className="flex items-center gap-1 text-[10px] font-bold bg-amber-400/20 text-amber-200 border border-amber-300/30 px-2 py-0.5 rounded-full">
+                  <Sparkles className="w-3 h-3" />
+                  AI Enriched
+                </span>
+              )}
+            </div>
+            <h3 className="text-xl font-extrabold text-white tracking-tight">
+              Discrepancy Attribution
+            </h3>
+            <p className="text-white/60 text-xs mt-1 max-w-lg">
+              Parameter-level causal breakdown of why the published claim diverges from your reproduction.
+            </p>
+          </div>
+
+          {/* Gap stat */}
+          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-5 py-3 text-center shrink-0">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-white/60">
+              {isReproduced ? 'Within Tolerance' : 'Attributable Gap'}
+            </div>
+            <div className={`text-3xl font-black font-mono mt-0.5 ${gapPositive ? 'text-emerald-300' : 'text-rose-300'}`}>
+              {gapPositive ? '+' : ''}{gapNum.toFixed(2)}
+              <span className="text-base font-semibold text-white/70 ml-1">pp</span>
+            </div>
+            {!isReproduced && (
+              <div className="text-[10px] text-white/50 mt-0.5">vs published claim</div>
             )}
-          </div>
-
-          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <span>Root-Cause Discrepancy Attribution</span>
-          </h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            {xai.summary ||
-              'Decomposes empirical replication gap into parameter-level causal elasticities to explain why the published claim diverged.'}
-          </p>
-        </div>
-
-        {/* Gap Stat Pill */}
-        <div className="sm:text-right bg-gradient-to-br from-purple-50/70 to-indigo-50/70 p-3.5 rounded-2xl border border-purple-100 shrink-0">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-purple-600">
-            Attributable Gap
-          </div>
-          <div className="text-2xl font-black font-mono text-purple-900 mt-0.5">
-            {xai.gap_pp !== undefined ? (xai.gap_pp >= 0 ? `+${xai.gap_pp.toFixed(2)}` : xai.gap_pp.toFixed(2)) : '0.00'}
-            <span className="text-sm font-semibold text-purple-700 ml-0.5">pp</span>
-          </div>
-          <div className="text-[10px] text-purple-600 font-medium">
-            {isReproduced ? 'Within tolerance band' : 'Accounted by XAI model'}
           </div>
         </div>
       </div>
 
-      {/* Attribution Breakdown List / Waterfall Bars */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-            <Sliders className="w-3.5 h-3.5 text-brand-600" />
-            <span>Parameter Elasticity & Blame Share</span>
-          </h4>
-          <span className="text-[11px] text-slate-400 font-medium">
-            Ranked by impact share
-          </span>
-        </div>
+      <div className="p-6 sm:p-7 space-y-5">
 
-        <div className="space-y-3">
-          {visibleAttributions.map((attr, idx) => {
-            const isNegative = attr.direction === 'drag'
-            const isNeutral = attr.direction === 'neutral'
-            const isPositive = attr.direction === 'positive'
+        {/* ─── Attribution bars ─── */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-3.5 h-3.5 text-violet-500" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                Parameter Blame Share
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-400 font-medium">
+              Click <ChevronDown className="w-3 h-3 inline" /> to inspect mechanism
+            </span>
+          </div>
 
-            return (
-              <div
+          <div className="space-y-2">
+            {visibleAttributions.map((attr, idx) => (
+              <AttributionRow
                 key={attr.param + idx}
-                className="bg-slate-50/80 hover:bg-slate-50 rounded-2xl p-4 border border-slate-200/80 transition-colors space-y-2.5"
-              >
-                {/* Top line: Label, Values, Share Pill */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold font-mono text-slate-900">
-                      {attr.label}
-                    </span>
-                    {attr.status && (
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                        attr.status === 'MISMATCH'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : attr.status === 'MISSING'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                          : attr.status === 'VARIANCE'
-                          ? 'bg-slate-100 text-slate-600 border-slate-200'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      }`}>
-                        {attr.status}
-                      </span>
-                    )}
+                attr={attr}
+                maxShare={maxShare}
+                onInspectParam={onInspectParam}
+              />
+            ))}
+          </div>
 
-                    {attr.paper_value !== undefined && attr.code_value !== undefined && attr.status !== 'VARIANCE' && (
-                      <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5">
-                        <span className="bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-700">
-                          code: <b>{String(attr.code_value ?? 'none')}</b>
-                        </span>
-                        <ArrowRight className="w-3 h-3 text-slate-400" />
-                        <span className="bg-purple-50 text-purple-800 px-2 py-0.5 rounded border border-purple-200">
-                          paper: <b>{String(attr.paper_value ?? 'none')}</b>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Impact & Share Badge */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right">
-                      <span className="text-xs font-mono font-extrabold text-slate-900">
-                        {attr.share_pct}%
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-semibold ml-1">
-                        share
-                      </span>
-                    </div>
-
-                    <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-xl flex items-center gap-1 ${
-                      isNegative
-                        ? 'bg-rose-100 text-rose-800'
-                        : isPositive
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {isNegative ? (
-                        <TrendingDown className="w-3 h-3" />
-                      ) : isPositive ? (
-                        <TrendingUp className="w-3 h-3" />
-                      ) : null}
-                      <span>{attr.impact_pp >= 0 ? `+${attr.impact_pp.toFixed(2)}` : attr.impact_pp.toFixed(2)} pp</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar visualizing causal share */}
-                <div className="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      isNegative
-                        ? 'bg-gradient-to-r from-rose-500 to-amber-500'
-                        : isPositive
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                        : 'bg-gradient-to-r from-purple-500 to-indigo-500'
-                    }`}
-                    style={{ width: `${Math.max(attr.share_pct, 4)}%` }}
-                  />
-                </div>
-
-                {/* Theoretical Mechanism callout */}
-                {attr.ai_insight && (
-                  <div className="bg-purple-50/80 border border-purple-100/90 rounded-xl px-3 py-1.5 text-[11px] text-purple-900 flex items-start gap-2 mt-1">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                    <span>
-                      <b className="font-semibold text-purple-950">Theoretical Mechanism:</b>{' '}
-                      {attr.ai_insight}
-                    </span>
-                  </div>
-                )}
-
-                {/* Explanatory sentence & citation buttons */}
-                {attr.explanation && (
-                  <div className="text-[11px] text-slate-600 flex items-center justify-between gap-2 flex-wrap pt-0.5">
-                    <p className="line-clamp-2">{attr.explanation}</p>
-                    {onInspectParam && attr.paper_ref && (
-                      <button
-                        onClick={() => onInspectParam(attr.param)}
-                        className="text-[10px] font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded border border-brand-200 transition-colors whitespace-nowrap cursor-pointer"
-                      >
-                        Locate in Paper PDF
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {attributions.length > 4 && (
-          <div className="text-center pt-1">
+          {attributions.length > 4 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-900 transition-colors"
+              className="mt-3 w-full py-2 text-xs font-semibold text-violet-600 hover:text-violet-800 hover:bg-violet-50 rounded-xl border border-violet-100 hover:border-violet-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               {showAll ? (
-                <>
-                  <ChevronUp className="w-3.5 h-3.5" />
-                  <span>Show Top Factors Only</span>
-                </>
+                <><ChevronUp className="w-3.5 h-3.5" /> Show fewer</>
               ) : (
-                <>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                  <span>Show All {attributions.length} Attribution Factors</span>
-                </>
+                <><ChevronDown className="w-3.5 h-3.5" /> Show all {attributions.length} factors</>
               )}
             </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Actionable Counterfactual Intervention Card */}
-      {cf && cf.actionable && (
-        <div className="bg-gradient-to-br from-indigo-500/5 via-purple-500/10 to-pink-500/5 border border-purple-200 rounded-2xl p-5 sm:p-6 space-y-3 relative overflow-hidden">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
-              <Lightbulb className="w-4 h-4" />
+        {/* ─── Counterfactual ─── */}
+        {cf && cf.actionable && (
+          <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 overflow-hidden">
+            {/* CF header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-violet-100 bg-white/50">
+              <div className="w-7 h-7 rounded-xl bg-violet-600 flex items-center justify-center shrink-0">
+                <Lightbulb className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <div className="text-xs font-extrabold text-slate-800">Counterfactual Recommendation</div>
+                <div className="text-[10px] text-slate-400">Minimum change to recover parity</div>
+              </div>
             </div>
-            <div>
-              <h4 className="text-sm font-extrabold text-slate-900 tracking-tight">
-                Counterfactual Intervention Recommendation
-              </h4>
-              <p className="text-[11px] text-slate-500">
-                Minimum parameter intervention mathematically projected to recover parity.
-              </p>
+
+            {/* CF stats row */}
+            <div className="grid grid-cols-3 divide-x divide-violet-100 border-b border-violet-100">
+              <div className="px-4 py-3 text-center">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Change</div>
+                <div className="text-sm font-bold text-slate-800 font-mono flex items-center justify-center gap-1">
+                  <span className="text-slate-500">{String(cf.current_code_value)}</span>
+                  <ArrowRight className="w-3 h-3 text-violet-400" />
+                  <span className="text-violet-700">{String(cf.target_paper_value)}</span>
+                </div>
+                <div className="text-[10px] text-slate-400">{cf.top_label}</div>
+              </div>
+              <div className="px-4 py-3 text-center">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Gap Closed</div>
+                <div className="text-lg font-black font-mono text-violet-700">+{cf.closes_gap_pct}%</div>
+              </div>
+              <div className="px-4 py-3 text-center">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Projected</div>
+                <div className="text-lg font-black font-mono text-slate-800">
+                  {cf.projected_metric}{unit}
+                </div>
+                {cf.reaches_reproduced && (
+                  <div className="text-[10px] font-bold text-emerald-600 flex items-center justify-center gap-1 mt-0.5">
+                    <Target className="w-3 h-3" /> Reproduced
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white/90 backdrop-blur-xs rounded-xl p-4 border border-purple-100 text-xs text-slate-700 leading-relaxed shadow-2xs">
-            <p className="font-medium text-slate-800">
-              {cf.message}
-            </p>
-
-            {cf.ai_insight && (
-              <div className="mt-2.5 text-purple-900 bg-purple-50/80 p-2.5 rounded-lg border border-purple-100 flex items-start gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                <span className="leading-relaxed"><b>Research Mechanism:</b> {cf.ai_insight}</span>
+            {/* CF message */}
+            {(cf.message || cf.ai_insight) && (
+              <div className="px-4 py-3 space-y-2">
+                {cf.message && (
+                  <p className="text-xs text-slate-600 leading-relaxed">{cf.message}</p>
+                )}
+                {cf.ai_insight && (
+                  <div className="flex items-start gap-2 bg-white/70 rounded-xl px-3 py-2 border border-violet-100">
+                    <Sparkles className="w-3.5 h-3.5 text-violet-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-violet-900 leading-relaxed">{cf.ai_insight}</p>
+                  </div>
+                )}
               </div>
             )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-slate-100 text-[11px]">
-              <div>
-                <span className="text-slate-400 font-semibold block">Target Action:</span>
-                <span className="font-bold text-slate-900 font-mono">
-                  {cf.top_label} ➔ {String(cf.target_paper_value)}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 font-semibold block">Gap Closed:</span>
-                <span className="font-extrabold text-purple-700 font-mono">
-                  +{cf.closes_gap_pct}% of total gap
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 font-semibold block">Projected Outcome:</span>
-                <span className="font-extrabold text-slate-900 font-mono">
-                  {cf.projected_metric}{unit}{' '}
-                  {cf.reaches_reproduced && (
-                    <span className="text-emerald-600 font-bold ml-1">
-                      [REPRODUCED]
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
           </div>
-        </div>
-      )}
-
-      {/* Methodology Note */}
-      <div className="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
-        <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-        <span>
-          Attribution weights are computed using parameter divergence ratios combined with empirical loss-landscape elasticity priors and observed seed dispersion.
-        </span>
+        )}
       </div>
     </div>
   )
