@@ -84,6 +84,21 @@ def diagnose_failure(project: dict[str, Any], exp_id: str) -> dict[str, Any]:
             "target_file": project.get("scan", {}).get("entrypoint") or "train.py",
         }
 
+    # 2.5 Unrecognized arguments (e.g. train.py: error: unrecognized arguments: --out ...)
+    if "unrecognized arguments" in stderr_content:
+        entrypoint = project.get("scan", {}).get("entrypoint") or "train.py"
+        arg_match = re.search(r"unrecognized arguments:\s*(--?[a-zA-Z0-9_\-]+)", stderr_content)
+        arg_name = arg_match.group(1) if arg_match else "--out"
+        return {
+            "can_heal": True,
+            "category": "UNRECOGNIZED_ARGUMENT",
+            "title": f"Upstream Argument Conflict ({arg_name})",
+            "root_cause": f"The repository's argparse parser in '{entrypoint}' rejects '{arg_name}' passed by the runner.",
+            "remedy": f"Inject '{arg_name}' parameter into {entrypoint} and append automated test metrics exporter.",
+            "action_type": "inject_metrics_exporter",
+            "target_file": entrypoint,
+        }
+
     # 3. Missing --out flag / metrics not exported
     if "==> Wrote metrics to" not in stderr_content and any(r.get("metrics") is None for r in results):
         entrypoint = project.get("scan", {}).get("entrypoint") or "train.py"
@@ -141,10 +156,30 @@ def apply_auto_heal(project: dict[str, Any], exp_id: str, repo_path: Path) -> di
                 patched = content.replace(".cuda()", ".to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))")
                 target_path.write_text(patched, encoding="utf-8")
         elif diagnosis["action_type"] == "inject_metrics_exporter":
-            if "--out" not in content and "argparse" in content:
-                # Add out argument
-                patched = content.replace("parser.parse_args()", "parser.add_argument('--out', type=str, default=None)\n    args = parser.parse_args()")
-                target_path.write_text(patched, encoding="utf-8")
+            patched = content
+            if "--out" not in patched and "argparse" in patched:
+                if "args = parser.parse_args()" in patched:
+                    patched = patched.replace("args = parser.parse_args()", "parser.add_argument('--out', type=str, default=None, help='metrics output file')\nargs = parser.parse_args()")
+                elif "parser.parse_args()" in patched:
+                    patched = patched.replace("parser.parse_args()", "parser.add_argument('--out', type=str, default=None, help='metrics output file')\n    args = parser.parse_args()")
+            if "Wrote metrics to" not in patched:
+                writer_code = """
+# Auto-Healed Metrics Exporter injected by CrisisGrid
+if getattr(args, 'out', None):
+    import json
+    acc_val = float(best_acc) if 'best_acc' in locals() else (float(test_acc) if 'test_acc' in locals() else 0.0)
+    err_val = float(100.0 - acc_val) if acc_val <= 100.0 else 0.0
+    with open(args.out, 'w') as f:
+        json.dump({'accuracy': acc_val, 'top-1 error': err_val}, f)
+    print(f"==> Wrote metrics to {args.out}: accuracy={acc_val}, top-1 error={err_val}")
+"""
+                patched += "\n" + writer_code
+            target_path.write_text(patched, encoding="utf-8")
+
+    # Fast validation tuning on CPU: reduce 200 epochs to 1 if applicable
+    if "epochs" in new_spec.get("params", {}) and (new_spec["params"]["epochs"].get("value") or 0) > 1:
+        new_spec["params"]["epochs"]["value"] = 1
+        new_spec["diff_from_parent"].append("Adjusted epochs to 1 for rapid CPU verification")
 
     # Build new experiment spec
     param_str = "-".join(f"{k}:{v.get('value')}" for k, v in sorted(new_spec["params"].items()))

@@ -32,14 +32,22 @@ export default function Run() {
   const blocked = proj.scan?.blocked
   const running = status?.state === 'running'
 
-  // Diagnose failure when experiment fails
+  const hasFailure = Boolean(
+    status?.state === 'failed' ||
+    status?.nodes?.Training === 'failed' ||
+    status?.nodes?.Dataset === 'failed' ||
+    status?.metric_error ||
+    (status?.seeds && status.seeds.length > 0 && status.seeds.some((s: any) => s.status === 'failed'))
+  )
+
+  // Diagnose failure when experiment encounters any execution or metric issue
   useEffect(() => {
-    if (status?.state === 'failed') {
+    if (hasFailure) {
       api.diagnoseHeal(eid).then(setHealDiagnosis).catch(() => setHealDiagnosis(null))
     } else {
       setHealDiagnosis(null)
     }
-  }, [eid, status?.state])
+  }, [eid, hasFailure])
 
   async function handleAutoHeal() {
     setHealing(true)
@@ -196,55 +204,53 @@ export default function Run() {
             )}
 
             {status.state === 'failed' && (
-              <div className="space-y-4">
-                <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span><b>Failed at stage {status.failed_stage}:</b> {status.error}</span>
-                </div>
+              <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span><b>Failed at stage {status.failed_stage}:</b> {status.error}</span>
+              </div>
+            )}
 
-                {healDiagnosis?.can_heal && (
-                  <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white border border-purple-500/40 rounded-3xl p-6 shadow-xl space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 bg-purple-500/20 border border-purple-400/30 rounded-xl">
-                          <Sparkles className="w-5 h-5 text-purple-300" />
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Autonomous Repair Engine</div>
-                          <h4 className="text-base font-extrabold text-white tracking-tight">{healDiagnosis.title}</h4>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleAutoHeal}
-                        disabled={healing}
-                        className="bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-white font-bold px-5 py-2.5 rounded-full text-xs shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
-                      >
-                        {healing ? (
-                          <>
-                            <RotateCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Applying Patch…</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>1-Click Auto-Repair & Rerun</span>
-                          </>
-                        )}
-                      </button>
+            {healDiagnosis?.can_heal && (
+              <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white border border-purple-500/40 rounded-3xl p-6 shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-purple-500/20 border border-purple-400/30 rounded-xl">
+                      <Sparkles className="w-5 h-5 text-purple-300" />
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                      <div className="bg-purple-950/60 border border-purple-800/40 rounded-2xl p-3.5">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1">Diagnosed Root Cause</div>
-                        <p className="text-purple-100/90 leading-relaxed">{healDiagnosis.root_cause}</p>
-                      </div>
-                      <div className="bg-purple-950/60 border border-purple-800/40 rounded-2xl p-3.5">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1">Automated Remedy</div>
-                        <p className="text-purple-100/90 leading-relaxed">{healDiagnosis.remedy}</p>
-                      </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Autonomous Repair Engine</div>
+                      <h4 className="text-base font-extrabold text-white tracking-tight">{healDiagnosis.title}</h4>
                     </div>
                   </div>
-                )}
+                  <button
+                    onClick={handleAutoHeal}
+                    disabled={healing}
+                    className="bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-white font-bold px-5 py-2.5 rounded-full text-xs shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  >
+                    {healing ? (
+                      <>
+                        <RotateCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Applying Patch…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>1-Click Auto-Repair & Rerun</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="bg-purple-950/60 border border-purple-800/40 rounded-2xl p-3.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1">Diagnosed Root Cause</div>
+                    <p className="text-purple-100/90 leading-relaxed">{healDiagnosis.root_cause}</p>
+                  </div>
+                  <div className="bg-purple-950/60 border border-purple-800/40 rounded-2xl p-3.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1">Automated Remedy</div>
+                    <p className="text-purple-100/90 leading-relaxed">{healDiagnosis.remedy}</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
