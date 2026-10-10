@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useOutletContext, useParams, Link } from 'react-router-dom'
 import {
   FileText,
@@ -11,11 +11,22 @@ import {
   AlertTriangle,
   ArrowLeft,
   ChevronRight,
-  GitBranch
+  GitBranch,
+  Columns
 } from 'lucide-react'
 import { api, errMsg } from '../api/client'
+import PaperViewer, { EvidenceItem } from '../components/PaperViewer'
 
-export type Ctx = { pid: string; proj: any; eid: string; setEid: (e: string) => void; reload: () => Promise<void> }
+export type Ctx = {
+  pid: string
+  proj: any
+  eid: string
+  setEid: (e: string) => void
+  reload: () => Promise<void>
+  openPaperViewer: (item?: EvidenceItem) => void
+  splitView: boolean
+  setSplitView: (s: boolean) => void
+}
 export const useProject = () => useOutletContext<Ctx>()
 
 const TABS = [
@@ -32,6 +43,10 @@ export default function ProjectLayout() {
   const [proj, setProj] = useState<any>(null)
   const [eid, setEid] = useState('')
   const [err, setErr] = useState('')
+  const [splitView, setSplitView] = useState(false)
+  const [activeItem, setActiveItem] = useState<EvidenceItem | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState('')
 
   const reload = useCallback(async () => {
     try {
@@ -41,6 +56,54 @@ export default function ProjectLayout() {
         : p.experiments.length ? p.experiments[p.experiments.length - 1].id : '')
     } catch (e) { setErr(errMsg(e)) }
   }, [pid])
+
+  const handleRunAnalysis = async () => {
+    setAnalyzing(true)
+    setAnalysisError('')
+    try {
+      await api.analyze(pid)
+      await reload()
+    } catch (e) {
+      setAnalysisError(errMsg(e))
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  const openPaperViewer = useCallback((item?: EvidenceItem) => {
+    if (item) setActiveItem(item)
+    setSplitView(true)
+  }, [])
+
+  const evidenceItems: EvidenceItem[] = useMemo(() => {
+    if (!proj?.paper?.fields) return []
+    const items: EvidenceItem[] = []
+    const claim = proj.paper.fields._claim
+    if (claim && claim.quote) {
+      items.push({
+        id: 'claim',
+        param: `CLAIM: ${(claim.metric || 'ACCURACY').toUpperCase()}`,
+        value: claim.value != null ? `${claim.value}${claim.percent ? '%' : ''}` : 'None',
+        page: claim.page || 1,
+        bbox: claim.bbox,
+        quote: claim.quote,
+      })
+    }
+    for (const [k, f] of Object.entries<any>(proj.paper.fields)) {
+      if (k.startsWith('_')) continue
+      if (f.quote) {
+        items.push({
+          id: k,
+          param: k,
+          value: f.value,
+          page: f.page || 1,
+          bbox: f.bbox,
+          quote: f.quote,
+        })
+      }
+    }
+    return items
+  }, [proj])
 
   useEffect(() => { reload() }, [reload])
 
@@ -119,8 +182,31 @@ export default function ProjectLayout() {
             </div>
           </div>
 
+          {/* Actions: Inspect Paper PDF, Version Switcher, and Self-Healing Indicator */}
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Version Switcher */}
+            <button
+              onClick={() => {
+                setActiveItem(evidenceItems[0] || null)
+                setSplitView(!splitView)
+              }}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-semibold shadow-sm transition-all border ${
+                splitView
+                  ? 'bg-brand-500 text-white border-brand-500 shadow-glow'
+                  : 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-brand-700 border-blue-200/80 hover:shadow'
+              }`}
+              title="Toggle side-by-side split screen view with Paper PDF viewer"
+            >
+              <Columns className="w-4 h-4" />
+              <span>{splitView ? 'Exit Split View' : 'Split View Paper'}</span>
+              {evidenceItems.length > 0 && (
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                  splitView ? 'bg-white/20 text-white' : 'bg-brand-500 text-white'
+                }`}>
+                  {evidenceItems.length} citations
+                </span>
+              )}
+            </button>
+
             {proj.experiments.length > 0 && (
               <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-2xl">
                 <GitBranch className="w-4 h-4 text-brand-600" />
@@ -196,14 +282,65 @@ export default function ProjectLayout() {
         ))}
       </nav>
 
-      {/* Tab Content */}
+      {/* Tab Content & Side-by-Side Split View */}
       <div className="pt-2">
         {proj.experiments.length === 0 && !proj.error ? (
-          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-500">
-            <p className="text-sm">Not analyzed yet. Run analysis to construct the experiment specification.</p>
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-10 sm:p-14 text-center max-w-lg mx-auto shadow-card space-y-5 my-6">
+            <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mx-auto shadow-inner">
+              <Sparkles className="w-7 h-7 animate-pulse text-brand-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">Project Ready for Analysis</h3>
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed max-w-sm mx-auto">
+                Scan repository code, extract claims from the research PDF, and generate parameter reconciliation.
+              </p>
+            </div>
+            {analysisError && (
+              <div className="text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-3 text-left">
+                <b>Analysis error:</b> {analysisError}
+              </div>
+            )}
+            <div>
+              <button
+                onClick={handleRunAnalysis}
+                disabled={analyzing}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-semibold bg-brand-500 hover:bg-brand-600 active:scale-95 text-white shadow-glow disabled:opacity-50 transition-all cursor-pointer"
+              >
+                {analyzing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Analyzing Paper & Repository...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Run Analysis Now</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ) : splitView ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left Pane: Tab Content (Analysis, Graph, etc.) */}
+            <div className="lg:col-span-7 space-y-6">
+              <Outlet context={{ pid, proj, eid, setEid, reload, openPaperViewer, splitView, setSplitView } satisfies Ctx} />
+            </div>
+
+            {/* Right Pane: Live Embedded PaperViewer Sticky */}
+            <div className="lg:col-span-5 sticky top-4">
+              <PaperViewer
+                pid={pid}
+                items={evidenceItems}
+                activeItem={activeItem}
+                onSelectItem={(it) => setActiveItem(it)}
+                onClose={() => setSplitView(false)}
+                isModal={false}
+              />
+            </div>
           </div>
         ) : (
-          <Outlet context={{ pid, proj, eid, setEid, reload } satisfies Ctx} />
+          <Outlet context={{ pid, proj, eid, setEid, reload, openPaperViewer, splitView, setSplitView } satisfies Ctx} />
         )}
       </div>
     </div>

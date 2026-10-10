@@ -57,7 +57,7 @@ def setup_env(repo_path: Path, work_dir: Path, use_docker: bool,
             on_event("Dataset", "done")
             return {"ok": True, "python": None, "log": str(log)}
         venv = work_dir / "venv"
-        py = venv / "bin" / "python"
+        py = (venv / "Scripts" / "python.exe") if sys.platform == "win32" else (venv / "bin" / "python")
         if not marker.exists():
             subprocess.run([sys.executable, "-m", "venv", "--system-site-packages", str(venv)], check=True,
                            capture_output=True, timeout=120)

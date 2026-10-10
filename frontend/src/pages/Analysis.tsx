@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 
 export default function Analysis() {
-  const { pid, proj } = useProject()
+  const { pid, proj, openPaperViewer } = useProject()
   const [findings, setFindings] = useState<any[]>([])
   const [checklistData, setChecklistData] = useState<any>(null)
   const [leakageData, setLeakageData] = useState<any>(null)
@@ -29,6 +29,25 @@ export default function Analysis() {
   const fields = Object.entries<any>(paper?.fields || {}).filter(([k]) => !k.startsWith('_'))
   const claim = paper?.fields?._claim
   const warnings = proj.scan?.warnings || []
+
+  const handleInspectParam = (param: string) => {
+    const f = paper?.fields?.[param]
+    const finding = findings.find(x => x.param === param)
+    if (f && f.quote) {
+      openPaperViewer?.({
+        id: param,
+        param,
+        value: f.value,
+        codeValue: finding?.code_value,
+        status: finding?.status,
+        page: f.page || 1,
+        bbox: f.bbox,
+        quote: f.quote,
+      })
+    } else {
+      openPaperViewer?.()
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -198,10 +217,29 @@ export default function Analysis() {
 
       {/* Target Claim To Verify */}
       <section className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center justify-between gap-2 mb-3">
           <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
             Target Ground Truth
           </span>
+          {claim?.value != null && claim.quote && (
+            <button
+              onClick={() =>
+                openPaperViewer?.({
+                  id: 'claim',
+                  param: `CLAIM: ${(claim.metric || 'ACCURACY').toUpperCase()}`,
+                  value: `${claim.value}${claim.percent ? '%' : ''}`,
+                  page: claim.page || 1,
+                  bbox: claim.bbox,
+                  quote: claim.quote,
+                })
+              }
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition-colors shadow-sm"
+              title="Inspect exact bounding box in Paper PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-brand-600" />
+              <span>Locate Quote in PDF (Page {claim.page})</span>
+            </button>
+          )}
         </div>
         <h2 className="text-lg font-extrabold text-slate-900 tracking-tight mb-4">
           Published Paper Claim to Verify
@@ -259,38 +297,62 @@ export default function Analysis() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {fields.map(([k, f]) => (
-                <tr key={k} className="hover:bg-slate-50/50 transition-colors align-top">
-                  <td className="p-3.5 font-mono font-semibold text-xs text-slate-900">
-                    {k}
-                  </td>
-                  <td className="p-3.5 font-mono text-xs text-slate-800">
-                    {f.value ?? (
-                      <i className="text-slate-400 font-sans">
-                        {f.claimed_value != null ? `rejected (${f.claimed_value})` : 'missing'}
-                      </i>
-                    )}
-                  </td>
-                  <td className="p-3.5">
-                    <ProvenanceBadge source={f.source} />
-                  </td>
-                  <td className="p-3.5 text-xs text-slate-600">
-                    {f.quote ? (
-                      <span className="space-y-1 block">
-                        <span className="font-medium text-slate-700">p.{f.page}:</span> “{f.quote}”
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                    {paper?.flags?.[k] && (
-                      <div className="text-amber-600 font-semibold text-[11px] mt-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>Unverified extraction: quote not found verbatim on page</span>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {fields.map(([k, f]) => {
+                const finding = findings.find(x => x.param === k)
+                return (
+                  <tr key={k} className="hover:bg-slate-50/50 transition-colors align-top">
+                    <td className="p-3.5 font-mono font-semibold text-xs text-slate-900">
+                      {k}
+                    </td>
+                    <td className="p-3.5 font-mono text-xs text-slate-800">
+                      {f.value ?? (
+                        <i className="text-slate-400 font-sans">
+                          {f.claimed_value != null ? `rejected (${f.claimed_value})` : 'missing'}
+                        </i>
+                      )}
+                    </td>
+                    <td className="p-3.5">
+                      <ProvenanceBadge source={f.source} />
+                    </td>
+                    <td className="p-3.5 text-xs text-slate-600">
+                      {f.quote ? (
+                        <div className="space-y-1">
+                          <div>
+                            <span className="font-medium text-slate-700">p.{f.page}:</span> “{f.quote}”
+                          </div>
+                          <button
+                            onClick={() =>
+                              openPaperViewer?.({
+                                id: k,
+                                param: k,
+                                value: f.value,
+                                codeValue: finding?.code_value,
+                                status: finding?.status,
+                                page: f.page || 1,
+                                bbox: f.bbox,
+                                quote: f.quote,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded border border-brand-200 transition-colors"
+                            title="Highlight in Paper PDF"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>Locate in PDF (p.{f.page})</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                      {paper?.flags?.[k] && (
+                        <div className="text-amber-600 font-semibold text-[11px] mt-1 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          <span>Unverified extraction: quote not found verbatim on page</span>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -306,7 +368,7 @@ export default function Analysis() {
             Normalized aliases (lr, num_epochs, bs, wd) classified into MATCH, MISMATCH, ONLY_IN_PAPER, or ONLY_IN_CODE.
           </p>
         </div>
-        <DiffTable findings={findings} />
+        <DiffTable findings={findings} onInspectPaper={handleInspectParam} />
       </section>
     </div>
   )

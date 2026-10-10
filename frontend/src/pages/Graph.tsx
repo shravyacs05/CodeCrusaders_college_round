@@ -12,11 +12,27 @@ import { GitBranch, Layers, Info, AlertCircle } from 'lucide-react'
 const nodeTypes = { stage: GraphNode }
 
 export default function Graph() {
-  const { pid, eid, setEid, reload } = useProject()
+  const { pid, eid, setEid, reload, openPaperViewer, proj } = useProject()
   const [graph, setGraph] = useState<any>(null)
   const [sel, setSel] = useState<string | null>(null)
   const [err, setErr] = useState('')
   const { status } = useStatus(eid)
+
+  const handleInspectPaper = (param: string) => {
+    const f = proj?.paper?.fields?.[param]
+    if (f && f.quote) {
+      openPaperViewer?.({
+        id: param,
+        param,
+        value: f.value,
+        page: f.page || 1,
+        bbox: f.bbox,
+        quote: f.quote,
+      })
+    } else {
+      openPaperViewer?.()
+    }
+  }
 
   useEffect(() => {
     api.graph(pid, eid).then(setGraph).catch(e => setErr(errMsg(e)))
@@ -112,6 +128,7 @@ export default function Graph() {
             node={selected}
             onEdit={onEdit}
             onClose={() => setSel(null)}
+            onInspectPaper={handleInspectPaper}
           />
         )}
       </div>

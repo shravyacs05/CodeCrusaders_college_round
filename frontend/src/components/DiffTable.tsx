@@ -1,6 +1,13 @@
 import { StatusPill } from './ProvenanceBadge'
+import { FileText } from 'lucide-react'
 
-export default function DiffTable({ findings }: { findings: any[] }) {
+export default function DiffTable({
+  findings,
+  onInspectPaper,
+}: {
+  findings: any[]
+  onInspectPaper?: (param: string) => void
+}) {
   return (
     <div className="overflow-hidden border border-slate-200/90 rounded-2xl bg-white shadow-sm">
       <table className="w-full text-sm text-left border-collapse">
@@ -36,8 +43,20 @@ export default function DiffTable({ findings }: { findings: any[] }) {
                   <div className="text-slate-900 font-medium">{f.explanation}</div>
                 )}
                 {f.paper_ref && (
-                  <div className="text-slate-500">
-                    <span className="font-semibold text-slate-700">paper:</span> {f.paper_ref}
+                  <div className="text-slate-500 flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                      <span className="font-semibold text-slate-700">paper:</span> {f.paper_ref}
+                    </div>
+                    {onInspectPaper && (
+                      <button
+                        onClick={() => onInspectPaper(f.param)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded border border-brand-200 transition-colors"
+                        title="Locate exact quote in Paper PDF"
+                      >
+                        <FileText className="w-3 h-3" />
+                        <span>Locate in PDF</span>
+                      </button>
+                    )}
                   </div>
                 )}
                 {f.code_ref && (
@@ -47,6 +66,7 @@ export default function DiffTable({ findings }: { findings: any[] }) {
                 )}
               </td>
             </tr>
+
           ))}
         </tbody>
       </table>
