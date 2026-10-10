@@ -44,7 +44,9 @@ def get_repo(repo_url: str, dest: Path) -> tuple[Path, str]:
     from git import Repo
 
     repo = Repo.clone_from(repo_url, dest, depth=1)
-    return dest, repo.head.commit.hexsha
+    commit = repo.head.commit.hexsha
+    shutil.rmtree(dest / ".git", ignore_errors=True)
+    return dest, commit
 
 
 def _is_scalar(v: Any) -> bool:

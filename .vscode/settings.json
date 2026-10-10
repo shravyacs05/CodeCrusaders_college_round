@@ -1,0 +1,6 @@
+{
+  "git.ignoredRepositories": [
+    "data"
+  ],
+  "git.repositoryScanMaxDepth": 1
+}
