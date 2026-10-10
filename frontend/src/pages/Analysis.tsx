@@ -16,9 +16,13 @@ import {
 export default function Analysis() {
   const { pid, proj } = useProject()
   const [findings, setFindings] = useState<any[]>([])
+  const [checklistData, setChecklistData] = useState<any>(null)
+  const [leakageData, setLeakageData] = useState<any>(null)
 
   useEffect(() => {
     api.findings(pid).then(setFindings).catch(() => setFindings([]))
+    api.checklist(pid).then(setChecklistData).catch(() => setChecklistData(null))
+    api.leakage(pid).then(setLeakageData).catch(() => setLeakageData(null))
   }, [pid])
 
   const paper = proj.paper
@@ -28,6 +32,144 @@ export default function Analysis() {
 
   return (
     <div className="space-y-8">
+      {/* NeurIPS / ICLR Reproducibility Checklist Scorecard */}
+      {checklistData && (
+        <section className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-indigo-900/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-indigo-800/40">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-900/80 px-2.5 py-0.5 rounded-full border border-indigo-700/50">
+                  Conference Standard
+                </span>
+                <span className="text-xs text-indigo-300 font-mono">NeurIPS / ICLR Audit Protocol</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Reproducibility Scorecard & Checklist
+              </h2>
+            </div>
+            <div className="flex items-center gap-4 bg-slate-800/60 border border-indigo-700/40 rounded-2xl p-3.5 px-5">
+              <div className="text-right">
+                <div className="text-xs text-slate-400 font-medium">Compliance Index</div>
+                <div className="text-2xl font-black text-indigo-400 font-mono">{checklistData.score_pct}%</div>
+              </div>
+              <div className="h-9 w-px bg-slate-700" />
+              <div>
+                <div className="text-xs text-slate-400 font-medium">Grade</div>
+                <div className="text-sm font-bold text-emerald-400">{checklistData.grade}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {checklistData.checklist?.map((item: any, idx: number) => (
+              <div key={idx} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-600/40 transition-colors">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="text-xs font-semibold text-slate-200 leading-snug">
+                    {item.question}
+                  </div>
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 border ${
+                    item.status === 'PASS'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : item.status === 'WARN'
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                      : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                  }`}>
+                    {item.status}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono bg-slate-900/60 p-2 rounded-lg truncate" title={item.evidence}>
+                  {item.evidence}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Interactive Data Leakage & Contamination Visualizer */}
+      <section className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                Methodological Integrity
+              </span>
+            </div>
+            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+              Data Leakage & Preprocessing Isolation Visualizer
+            </h2>
+          </div>
+          {leakageData?.clean ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Verified Shielded (0 Leaks Detected)
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+              Contamination Risks Detected
+            </span>
+          )}
+        </div>
+
+        {/* Visual Pipeline Flow */}
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 mb-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex-1 w-full">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 1: Ingestion</div>
+              <div className="text-xs font-bold text-slate-800 mt-0.5">Raw Dataset (X, y)</div>
+            </div>
+
+            <div className="text-slate-400 font-bold hidden md:block">→</div>
+
+            <div className={`p-3 rounded-xl border flex-1 w-full ${
+              leakageData?.findings?.some((f: any) => f.rule === 'preprocessing_fit_before_split')
+                ? 'bg-rose-50 border-rose-300 text-rose-900'
+                : 'bg-white border-slate-200'
+            }`}>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 2: Train/Test Split</div>
+              <div className="text-xs font-bold mt-0.5">
+                {leakageData?.findings?.some((f: any) => f.rule === 'preprocessing_fit_before_split') ? (
+                  <span className="text-rose-700 font-extrabold">Split Delayed! (Leaked)</span>
+                ) : (
+                  <span className="text-emerald-700 font-bold">Isolated Partition</span>
+                )}
+              </div>
+            </div>
+
+            <div className="text-slate-400 font-bold hidden md:block">→</div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex-1 w-full">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 3: Feature Scaling</div>
+              <div className="text-xs font-bold text-slate-800 mt-0.5">Fit on X_train only</div>
+            </div>
+
+            <div className="text-slate-400 font-bold hidden md:block">→</div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex-1 w-full">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Step 4: Evaluation</div>
+              <div className="text-xs font-bold text-slate-800 mt-0.5">Uncontaminated Test Set</div>
+            </div>
+          </div>
+        </div>
+
+        {leakageData?.findings && leakageData.findings.length > 0 && (
+          <div className="space-y-2.5">
+            {leakageData.findings.map((f: any, idx: number) => (
+              <div key={idx} className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-rose-900">
+                  <div className="font-bold text-rose-950 mb-0.5">
+                    {f.rule === 'preprocessing_fit_before_split' ? 'Data Leakage: Preprocessor Fit Before Split' : 'Data Leakage: Fit on Entire Dataset'}
+                  </div>
+                  <div>{f.message}</div>
+                  <div className="font-mono text-[11px] text-rose-700 mt-1">Source file: {f.file}:{f.line}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
       {/* Execution Blocked Banner */}
       {proj.scan?.blocked && (
         <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 flex items-start gap-3">

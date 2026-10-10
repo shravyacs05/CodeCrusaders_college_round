@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api, errMsg } from '../api/client'
 import { useStatus } from '../useStatus'
 import { useProject } from './ProjectLayout'
@@ -27,8 +27,34 @@ export default function Run() {
   const { status, start, poll } = useStatus(eid)
   const [seeds, setSeeds] = useState(3)
   const [err, setErr] = useState('')
+  const [healDiagnosis, setHealDiagnosis] = useState<any>(null)
+  const [healing, setHealing] = useState(false)
   const blocked = proj.scan?.blocked
   const running = status?.state === 'running'
+
+  // Diagnose failure when experiment fails
+  useEffect(() => {
+    if (status?.state === 'failed') {
+      api.diagnoseHeal(eid).then(setHealDiagnosis).catch(() => setHealDiagnosis(null))
+    } else {
+      setHealDiagnosis(null)
+    }
+  }, [eid, status?.state])
+
+  async function handleAutoHeal() {
+    setHealing(true)
+    setErr('')
+    try {
+      const res = await api.autoHeal(eid)
+      if (res?.ok) {
+        window.location.reload()
+      }
+    } catch (e) {
+      setErr(errMsg(e))
+    } finally {
+      setHealing(false)
+    }
+  }
 
   async function go() {
     setErr('')
@@ -170,9 +196,55 @@ export default function Run() {
             )}
 
             {status.state === 'failed' && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                <span><b>Failed at stage {status.failed_stage}:</b> {status.error}</span>
+              <div className="space-y-4">
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span><b>Failed at stage {status.failed_stage}:</b> {status.error}</span>
+                </div>
+
+                {healDiagnosis?.can_heal && (
+                  <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white border border-purple-500/40 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-purple-500/20 border border-purple-400/30 rounded-xl">
+                          <Sparkles className="w-5 h-5 text-purple-300" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Autonomous Repair Engine</div>
+                          <h4 className="text-base font-extrabold text-white tracking-tight">{healDiagnosis.title}</h4>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleAutoHeal}
+                        disabled={healing}
+                        className="bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-white font-bold px-5 py-2.5 rounded-full text-xs shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                      >
+                        {healing ? (
+                          <>
+                            <RotateCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Applying Patch…</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>1-Click Auto-Repair & Rerun</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      <div className="bg-purple-950/60 border border-purple-800/40 rounded-2xl p-3.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1">Diagnosed Root Cause</div>
+                        <p className="text-purple-100/90 leading-relaxed">{healDiagnosis.root_cause}</p>
+                      </div>
+                      <div className="bg-purple-950/60 border border-purple-800/40 rounded-2xl p-3.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-purple-300 mb-1">Automated Remedy</div>
+                        <p className="text-purple-100/90 leading-relaxed">{healDiagnosis.remedy}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

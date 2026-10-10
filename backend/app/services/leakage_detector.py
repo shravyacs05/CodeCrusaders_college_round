@@ -65,6 +65,9 @@ def detect_leakage(tree: ast.AST, rel_file: str) -> list[dict[str, Any]]:
                 "rule": "preprocessing_fit_before_split",
                 "file": rel_file,
                 "line": lineno,
+                "split_line": split_lineno,
+                "transformer": name,
+                "target_data": arg or "dataset",
                 "severity": "high",
                 "message": (
                     f"Potential Data Leakage: '{name}.fit' called on line {lineno} before "
@@ -76,6 +79,9 @@ def detect_leakage(tree: ast.AST, rel_file: str) -> list[dict[str, Any]]:
                 "rule": "preprocessing_fit_on_entire_dataset",
                 "file": rel_file,
                 "line": lineno,
+                "split_line": split_lineno,
+                "transformer": name,
+                "target_data": arg,
                 "severity": "high",
                 "message": (
                     f"Potential Data Leakage: '{name}.fit' called on full dataset '{arg}' "
@@ -87,12 +93,35 @@ def detect_leakage(tree: ast.AST, rel_file: str) -> list[dict[str, Any]]:
 
 
 def scan_repo_leakage(repo_path: Path) -> list[dict[str, Any]]:
-    """Scan all Python files in a repository for leakage."""
+    """Scan all Python files and Jupyter notebooks in a repository for leakage."""
+    import json
     leakage: list[dict[str, Any]] = []
+    # 1. Python files
     for py_file in repo_path.glob("*.py"):
         try:
-            tree = ast.parse(py_file.read_text())
+            tree = ast.parse(py_file.read_text(encoding="utf-8"))
             leakage.extend(detect_leakage(tree, py_file.name))
+        except Exception:
+            continue
+    # 2. Jupyter notebooks
+    for nb_path in repo_path.rglob("*.ipynb"):
+        try:
+            rel = nb_path.relative_to(repo_path).as_posix()
+        except ValueError:
+            rel = nb_path.name
+        if any(part.startswith(".") or part in ("venv", "node_modules", ".ipynb_checkpoints") for part in Path(rel).parts):
+            continue
+        try:
+            nb_data = json.loads(nb_path.read_text(encoding="utf-8"))
+            for idx, cell in enumerate(nb_data.get("cells", [])):
+                if cell.get("cell_type") == "code":
+                    source = "".join(cell.get("source", []))
+                    clean_lines = [l for l in source.splitlines() if not l.strip().startswith(("%", "!"))]
+                    try:
+                        tree = ast.parse("\n".join(clean_lines))
+                        leakage.extend(detect_leakage(tree, f"{rel}:cell_{idx + 1}"))
+                    except Exception:
+                        pass
         except Exception:
             continue
     return leakage

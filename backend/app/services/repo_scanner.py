@@ -44,9 +44,7 @@ def get_repo(repo_url: str, dest: Path) -> tuple[Path, str]:
     from git import Repo
 
     repo = Repo.clone_from(repo_url, dest, depth=1)
-    commit = repo.head.commit.hexsha
-    shutil.rmtree(dest / ".git", ignore_errors=True)
-    return dest, commit
+    return dest, repo.head.commit.hexsha
 
 
 def _is_scalar(v: Any) -> bool:
@@ -226,6 +224,38 @@ def scan_configs(repo_path: Path) -> list[dict[str, Any]]:
     return candidates
 
 
+def scan_notebooks(repo_path: Path) -> list[dict[str, Any]]:
+    """Scan Jupyter notebooks (*.ipynb) code cells for constructors, constants, and seeds."""
+    candidates: list[dict[str, Any]] = []
+    for nb_path in repo_path.rglob("*.ipynb"):
+        try:
+            rel = nb_path.relative_to(repo_path).as_posix()
+        except ValueError:
+            rel = nb_path.name
+        if any(part.startswith(".") or part in ("venv", "node_modules", ".ipynb_checkpoints") for part in Path(rel).parts):
+            continue
+        try:
+            data = json.loads(nb_path.read_text(encoding="utf-8"))
+            cells = data.get("cells", [])
+            for idx, cell in enumerate(cells):
+                if cell.get("cell_type") == "code":
+                    source = "".join(cell.get("source", []))
+                    if not source.strip():
+                        continue
+                    clean_lines = [l for l in source.splitlines() if not l.strip().startswith(("%", "!"))]
+                    try:
+                        tree = ast.parse("\n".join(clean_lines))
+                        c_ref = f"{rel}:cell_{idx + 1}"
+                        candidates.extend(scan_constructors(tree, c_ref))
+                        candidates.extend(scan_constants(tree, c_ref))
+                        candidates.extend(scan_seed_calls(tree, c_ref))
+                    except Exception:
+                        pass
+        except Exception:
+            continue
+    return candidates
+
+
 def find_entrypoint(repo_path: Path) -> Path | None:
     """Find the training or experiment execution entrypoint script."""
     patterns = ["train*.py", "main*.py", "run*.py", "experiment*.py", "eval*.py"]
@@ -295,8 +325,9 @@ def scan_repo(repo_path: Path) -> dict[str, Any]:
         except Exception:
             pass
 
-    # 2. Scan config files
+    # 2. Scan config files and Jupyter notebooks
     all_candidates.extend(scan_configs(repo_path))
+    all_candidates.extend(scan_notebooks(repo_path))
 
     # 3. Group and resolve by priority
     by_param: dict[str, list[dict[str, Any]]] = {}

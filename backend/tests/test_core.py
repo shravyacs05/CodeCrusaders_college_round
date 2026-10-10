@@ -246,3 +246,55 @@ def test_report_pdf_generation(tmp_path):
     }
     report.render_pdf(ctx, out_pdf)
     assert out_pdf.exists() and out_pdf.stat().st_size > 0
+
+
+def test_checklist_auditor():
+    from app.services.checklist_auditor import audit_checklist
+
+    proj = {
+        "repo_url": "https://github.com/example/repo",
+        "scan": {"entrypoint": "train.py", "warnings": []},
+        "paper": {"fields": {"_claim": {"verified": True, "value": 90.0, "metric": "accuracy", "page": 1}}},
+        "experiments": {"e1": {"id": "e1", "spec": {"params": {}}}},
+        "runs": {"e1": {"results": [{"status": "done", "manifest": {"isolation": "reduced isolation"}}, {"status": "done"}]}}
+    }
+    res = audit_checklist(proj, "e1")
+    assert res["score_pct"] > 60
+    assert len(res["checklist"]) >= 7
+    assert res["stats"]["passed"] >= 4
+
+
+def test_auto_healer():
+    from app.services.auto_healer import diagnose_failure
+
+    proj = {
+        "experiments": {"e1": {"id": "e1", "spec": {"params": {}}}},
+        "runs": {"e1": {"setup_log": "ERROR: No matching distribution found for torch==1.12.1+cpu", "results": []}}
+    }
+    diag = diagnose_failure(proj, "e1")
+    assert diag["can_heal"] is True
+    assert diag["category"] == "PLATFORM_WHEEL_LOCK_IN"
+
+
+def test_notebook_scanner(tmp_path):
+    import json
+    from app.services.repo_scanner import scan_notebooks
+
+    nb_path = tmp_path / "experiment.ipynb"
+    nb_content = {
+        "cells": [
+            {
+                "cell_type": "code",
+                "source": [
+                    "import random\n",
+                    "random.seed(42)\n",
+                    "learning_rate = 0.005\n"
+                ]
+            }
+        ]
+    }
+    nb_path.write_text(json.dumps(nb_content))
+    cands = scan_notebooks(tmp_path)
+    assert len(cands) >= 1
+    assert any(c["name"] in ("learning_rate", "seed") for c in cands)
+

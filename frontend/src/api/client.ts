@@ -31,4 +31,12 @@ export const api = {
     `/projects/${pid}/report${eid ? `?experiment_id=${eid}` : ''}`,
   reportPdfUrl: (pid: string, eid?: string) =>
     `/projects/${pid}/report.pdf${eid ? `?experiment_id=${eid}` : ''}`,
+  checklist: (pid: string, eid?: string) =>
+    http.get(`/projects/${pid}/checklist`, { params: { experiment_id: eid } }).then(r => r.data),
+  leakage: (pid: string) =>
+    http.get(`/projects/${pid}/leakage`).then(r => r.data),
+  diagnoseHeal: (eid: string) =>
+    http.get(`/experiments/${eid}/diagnose-heal`).then(r => r.data),
+  autoHeal: (eid: string) =>
+    http.post(`/experiments/${eid}/auto-heal`).then(r => r.data),
 }

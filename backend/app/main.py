@@ -9,7 +9,8 @@ from fastapi import BackgroundTasks, Body, FastAPI, File, Form, HTTPException, U
 from fastapi.responses import FileResponse, HTMLResponse
 
 from .config import DATA_DIR, TOLERANCE_PP
-from .services import (paper_analyzer, reconciler, repo_scanner, report, runner,
+from .services import (checklist_auditor, auto_healer, leakage_detector,
+                       paper_analyzer, reconciler, repo_scanner, report, runner,
                        spec_builder, verifier, versioning)
 
 app = FastAPI(title="CrisisGrid")
@@ -338,3 +339,44 @@ def get_report_pdf(pid: str, experiment_id: str | None = None):
     pdf_path = _p(pid) / "report.pdf"
     report.render_pdf(ctx, pdf_path)
     return FileResponse(pdf_path, media_type="application/pdf", filename=f"{proj['name']}_report.pdf")
+
+
+@app.get("/projects/{pid}/checklist")
+def get_project_checklist(pid: str, experiment_id: str | None = None):
+    proj = load(pid)
+    return checklist_auditor.audit_checklist(proj, experiment_id)
+
+
+@app.get("/experiments/{eid}/checklist")
+def get_experiment_checklist(eid: str):
+    pid, proj, _ = get_exp(eid)
+    return checklist_auditor.audit_checklist(proj, eid)
+
+
+@app.get("/projects/{pid}/leakage")
+def get_project_leakage(pid: str):
+    proj = load(pid)
+    repo_path = _p(pid) / "repo"
+    if not repo_path.exists():
+        return {"findings": [], "clean": True}
+    findings = leakage_detector.scan_repo_leakage(repo_path)
+    return {"findings": findings, "clean": len(findings) == 0}
+
+
+@app.get("/experiments/{eid}/diagnose-heal")
+def diagnose_experiment(eid: str):
+    pid, proj, _ = get_exp(eid)
+    diag = auto_healer.diagnose_failure(proj, eid)
+    return diag
+
+
+@app.post("/experiments/{eid}/auto-heal")
+def auto_heal_experiment(eid: str):
+    pid, proj, _ = get_exp(eid)
+    repo_path = _p(pid) / "repo"
+    res = auto_healer.apply_auto_heal(proj, eid, repo_path)
+    if not res.get("ok"):
+        raise HTTPException(400, res.get("error", "Failed to auto-heal"))
+    save(pid, proj)
+    return res
+
