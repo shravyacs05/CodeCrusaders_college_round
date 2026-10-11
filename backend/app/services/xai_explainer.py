@@ -23,6 +23,9 @@ SENSITIVITY_PRIORS = {
 DEFAULT_SENSITIVITY = 0.18
 
 
+_ATTRIBUTION_CACHE: dict[str, dict[str, Any]] = {}
+
+
 def compute_attribution(proj: dict[str, Any], eid: str, ver: dict[str, Any]) -> dict[str, Any]:
     """Compute XAI parameter attribution and counterfactual recommendation for verification."""
     if ver.get("status") == "BLOCKED" or not ver.get("published"):
@@ -30,6 +33,10 @@ def compute_attribution(proj: dict[str, Any], eid: str, ver: dict[str, Any]) -> 
             "available": False,
             "reason": "Verification blocked or no published claim available",
         }
+
+    cache_key = f"{eid}:{ver.get('status')}:{round(float(ver.get('reproduced_mean', 0.0)), 2)}"
+    if cache_key in _ATTRIBUTION_CACHE:
+        return _ATTRIBUTION_CACHE[cache_key]
 
     published = float(ver["published"])
     reproduced_mean = float(ver.get("reproduced_mean", 0.0))
@@ -292,7 +299,7 @@ def compute_attribution(proj: dict[str, Any], eid: str, ver: dict[str, Any]) -> 
                 f"Variance in {a['label'].lower()} directly modulates the optimization landscape and validation accuracy trajectory."
             )
 
-    return {
+    res = {
         "available": True,
         "ai_enriched": ai_enriched,
         "status": status,
@@ -309,3 +316,5 @@ def compute_attribution(proj: dict[str, Any], eid: str, ver: dict[str, Any]) -> 
         "attributions": attributions,
         "counterfactual": counterfactual,
     }
+    _ATTRIBUTION_CACHE[cache_key] = res
+    return res

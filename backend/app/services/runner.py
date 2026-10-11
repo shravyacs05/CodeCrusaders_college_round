@@ -19,12 +19,22 @@ from .versioning import config_hash
 DOCKER_IMAGE = "crisisgrid-runner"
 
 
+_DOCKER_AVAILABLE_CACHE: bool | None = None
+
+
 def docker_available() -> bool:
+    global _DOCKER_AVAILABLE_CACHE
+    if _DOCKER_AVAILABLE_CACHE is not None:
+        return _DOCKER_AVAILABLE_CACHE
     if not shutil.which("docker"):
+        _DOCKER_AVAILABLE_CACHE = False
         return False
     try:
-        return subprocess.run(["docker", "info"], capture_output=True, timeout=10).returncode == 0
+        res = subprocess.run(["docker", "info"], capture_output=True, timeout=2).returncode == 0
+        _DOCKER_AVAILABLE_CACHE = res
+        return res
     except Exception:
+        _DOCKER_AVAILABLE_CACHE = False
         return False
 
 
