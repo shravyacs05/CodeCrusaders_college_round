@@ -121,14 +121,33 @@ def list_projects():
             p = json.loads(f.read_text())
             status = p.get("status", "analyzed")
             exps = p.get("experiments", {})
-            if exps:
-                root_eid = list(exps.keys())[0]
-                try:
-                    ver = _verification(p, root_eid)
-                    if ver and ver.get("status") in ("REPRODUCED", "NOT_REPRODUCED"):
-                        status = ver["status"]
-                except Exception:
-                    pass
+            runs = p.get("runs", {})
+            if exps and runs:
+                for eid, exp in exps.items():
+                    r = runs.get(eid)
+                    if r and r.get("results"):
+                        claim = exp.get("spec", {}).get("claim")
+                        if claim and claim.get("value") is not None:
+                            try:
+                                claim_val = float(claim["value"])
+                                cm = claim.get("metric", "accuracy").lower()
+                                vals = []
+                                for res in r["results"]:
+                                    m = (res.get("metrics") or {}) if isinstance(res, dict) else {}
+                                    for k, v in m.items():
+                                        kl = k.lower()
+                                        if kl == cm or kl == f"{cm}_score" or kl.replace("_", "") == cm.replace("_", ""):
+                                            val = float(v)
+                                            if claim.get("percent", False) and val <= 1.0:
+                                                val *= 100.0
+                                            vals.append(val)
+                                            break
+                                if vals:
+                                    mean_val = sum(vals) / len(vals)
+                                    status = "REPRODUCED" if abs(mean_val - claim_val) <= TOLERANCE_PP else "NOT_REPRODUCED"
+                                    break
+                            except Exception:
+                                pass
             out.append({
                 "id": p["id"],
                 "name": p["name"],
@@ -170,14 +189,14 @@ def analyze(pid: str):
     repo_path = _p(pid) / "repo"
 
     if is_paper_only:
-        commit = scaffold_synthesizer.synthesize_repo(repo_path, paper["fields"])
+        commit = scaffold_synthesizer.synthesize_repo(repo_path, paper["fields"], paper.get("methodology"))
         proj["is_paper_only"] = True
     else:
         try:
             repo_path, commit = repo_scanner.get_repo(proj["repo_url"], repo_path)
         except Exception as e:
             # Graceful fallback: synthesize scaffold if remote git clone fails
-            commit = scaffold_synthesizer.synthesize_repo(repo_path, paper["fields"])
+            commit = scaffold_synthesizer.synthesize_repo(repo_path, paper["fields"], paper.get("methodology"))
             is_paper_only = True
             proj["is_paper_only"] = True
 
@@ -355,24 +374,25 @@ def status(eid: str):
                        "isolation": x["manifest"]["isolation"]} for x in r["results"]]}
 
 
-def _verification(proj: dict, eid: str) -> dict:
+def _verification(proj: dict, eid: str, with_attribution: bool = False) -> dict:
     exp = proj["experiments"][eid]
     ser = _series(proj, eid)
     if ser["reason"] or not ser["values"]:
         return {"status": "BLOCKED", "reason": ser["reason"] or "no successful runs",
                 "tolerance_pp": TOLERANCE_PP}
     res = verifier.verify(exp["spec"]["claim"]["value"], ser["values"], TOLERANCE_PP, scale=1.0)
-    try:
-        res["xai_attribution"] = xai_explainer.compute_attribution(proj, eid, res)
-    except Exception:
-        pass
+    if with_attribution:
+        try:
+            res["xai_attribution"] = xai_explainer.compute_attribution(proj, eid, res)
+        except Exception:
+            pass
     return res
 
 
 @app.get("/experiments/{eid}/verification")
 def verification(eid: str):
     pid, proj, exp = get_exp(eid)
-    return _verification(proj, eid)
+    return _verification(proj, eid, with_attribution=True)
 
 
 @app.get("/experiments/{eid}/xai-attribution")
@@ -479,11 +499,15 @@ def get_project_notebook(pid: str, experiment_id: str | None = None):
     if not exps:
         raise HTTPException(400, "Project has not been analyzed yet")
     exp = exps[experiment_id] if experiment_id and experiment_id in exps else max(exps.values(), key=lambda e: e.get("version", 1))
-    repo_path = _p(pid) / "repo"
+    is_paper_only = proj.get("is_paper_only", False)
+    paper = proj.get("paper", {})
+    methodology = paper.get("methodology")
     nb_dict = notebook_exporter.generate_notebook(
         exp.get("spec", {}),
         proj.get("name", "Reproduction Project"),
-        repo_path=repo_path if repo_path.exists() else None
+        repo_path=repo_path if (repo_path.exists() and not is_paper_only) else None,
+        methodology=methodology,
+        is_paper_only=is_paper_only,
     )
     nb_json = json.dumps(nb_dict, indent=2)
     filename = f"{proj.get('name', 'project').lower().replace(' ', '_')}_reproduction.ipynb"

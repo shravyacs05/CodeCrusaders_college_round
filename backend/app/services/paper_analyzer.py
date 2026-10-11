@@ -144,8 +144,9 @@ LLM_SYSTEM = (
     "You extract experiment details from a machine learning paper. Return ONLY JSON of the form "
     '{"claim": {"metric": str, "value": number (percent), "page": int, "quote": str}, '
     '"params": {"<name>": {"value": number|string|null, "page": int|null, "quote": str|null}}}. '
-    "Use snake_case names such as n_estimators, max_depth, learning_rate, batch_size, epochs, "
-    "test_size, seed, optimizer. Quotes must be copied verbatim from the page text. "
+    "Use snake_case names such as learning_rate, batch_size, epochs, seed, optimizer, "
+    "dropout_rate, embedding_dim, filter_sizes, num_filters, hidden_size, num_layers, "
+    "n_estimators, max_depth, test_size. Quotes must be copied verbatim from the page text. "
     "If a value is not stated in the paper, set value, page and quote to null. Never guess."
 )
 
@@ -276,6 +277,140 @@ def render_page_png(pdf_path: str, page_num: int, dpi: int = 144) -> bytes:
         return doc[page_num - 1].get_pixmap(dpi=dpi).tobytes("png")
 
 
+# ── Methodology & Domain Detection ──────────────────────────────────────────
+
+# Architecture keywords → canonical architecture tag
+_ARCH_KEYWORDS: list[tuple[str, re.Pattern[str]]] = [
+    ("transformer", re.compile(r"\btransformer(?:s)?\b|self[\s-]?attention|multi[\s-]?head[\s-]?attention", re.I)),
+    ("bert", re.compile(r"\bBERT\b|\bRoBERTa\b|\bDistilBERT\b|\bALBERT\b", re.I)),
+    ("gpt", re.compile(r"\bGPT[\s-]?\d?\b|\bautoregressive[\s-]?language[\s-]?model", re.I)),
+    ("resnet", re.compile(r"\bResNet[\s-]?\d*\b|\bresidual[\s-]?network\b|\bResNeXt\b", re.I)),
+    ("vgg", re.compile(r"\bVGG[\s-]?\d*\b", re.I)),
+    ("lstm", re.compile(r"\bLSTM\b|\blong[\s-]?short[\s-]?term[\s-]?memory\b|\bBi[\s-]?LSTM\b", re.I)),
+    ("gru", re.compile(r"\bGRU\b|\bgated[\s-]?recurrent[\s-]?unit\b", re.I)),
+    ("rnn", re.compile(r"\bRNN\b|\brecurrent[\s-]?neural[\s-]?network\b", re.I)),
+    ("cnn", re.compile(r"\bCNN\b|\bconvolutional[\s-]?neural[\s-]?network\b|1[\s-]?D[\s-]?convolution|text[\s-]?CNN", re.I)),
+    ("gan", re.compile(r"\bGAN\b|\bgenerative[\s-]?adversarial\b|\bDCGAN\b|\bWGAN\b", re.I)),
+    ("autoencoder", re.compile(r"\bauto[\s-]?encoder\b|\bVAE\b|\bvariational[\s-]?auto[\s-]?encoder\b", re.I)),
+    ("random_forest", re.compile(r"\brandom[\s-]?forest\b", re.I)),
+    ("xgboost", re.compile(r"\bXGBoost\b|\bgradient[\s-]?boost(?:ing|ed)?\b|\bGBDT\b|\bLightGBM\b", re.I)),
+    ("svm", re.compile(r"\bSVM\b|\bsupport[\s-]?vector[\s-]?machine\b", re.I)),
+    ("logistic_regression", re.compile(r"\blogistic[\s-]?regression\b", re.I)),
+    ("mlp", re.compile(r"\bMLP\b|\bmulti[\s-]?layer[\s-]?perceptron\b|\bfeed[\s-]?forward[\s-]?network\b", re.I)),
+]
+
+# Domain keywords → canonical domain tag
+_DOMAIN_KEYWORDS: list[tuple[str, re.Pattern[str]]] = [
+    ("nlp", re.compile(
+        r"\bNLP\b|\bnatural[\s-]?language\b|\bsentiment\b|\btext[\s-]?classif|"
+        r"\btokeniz|\bword[\s-]?embed|\bword2vec\b|\bGloVe\b|\bIMDb\b|\bSST\b|"
+        r"\bsentence[\s-]?classif|\bnamed[\s-]?entity|\bmachine[\s-]?translation|"
+        r"\blanguage[\s-]?model|\bcorpus\b|\bvocab|\bsequence[\s-]?label", re.I)),
+    ("cv", re.compile(
+        r"\bcomputer[\s-]?vision\b|\bimage[\s-]?classif|\bobject[\s-]?detect|"
+        r"\bCIFAR\b|\bImageNet\b|\bMNIST\b|\bpixel|\bconvolution|\bimage[\s-]?recognition|"
+        r"\bsegmentation\b|\bdata[\s-]?augment|\bResNet\b|\bVGG\b", re.I)),
+    ("tabular", re.compile(
+        r"\btabular\b|\bstructured[\s-]?data\b|\bfeature[\s-]?engineer|\bbreast[\s-]?cancer|"
+        r"\bUCI\b|\bclinical[\s-]?data\b|\bregression[\s-]?task\b", re.I)),
+    ("audio", re.compile(
+        r"\baudio\b|\bspeech[\s-]?recognition\b|\bASR\b|\bmel[\s-]?spectrogram\b|\bwaveform\b", re.I)),
+    ("graph", re.compile(
+        r"\bgraph[\s-]?neural[\s-]?network\b|\bGNN\b|\bnode[\s-]?classif|\bGCN\b", re.I)),
+]
+
+
+LLM_METHODOLOGY_SYSTEM = """You are an expert AI researcher and literature auditor in CrisisGrid.
+Analyze the provided research paper text and extract the exact model architecture, methodology, and domain.
+Return ONLY a valid JSON object matching:
+{
+  "architecture_name": string (exact model name, e.g. "TextCNN", "ResNet-50", "BERT", "Multi-Layer Perceptron"),
+  "canonical_architecture": "cnn" | "resnet" | "vgg" | "lstm" | "gru" | "rnn" | "transformer" | "bert" | "gpt" | "mlp" | "random_forest" | "xgboost" | "svm",
+  "domain": "nlp" | "cv" | "tabular" | "audio" | "graph",
+  "framework": "pytorch" | "sklearn",
+  "model_summary": string (1-2 sentence concise summary of the methodology),
+  "components": list of strings (key architectural components and layer details),
+  "architecture_details": list of strings (detected architectural specifics, e.g. kernel sizes, layers),
+  "domain_details": list of strings (detected problem / dataset specifics)
+}
+"""
+
+
+def detect_methodology_llm(pages: list[str]) -> dict[str, Any]:
+    """Extract model architecture and domain using Gemini API."""
+    from . import llm
+
+    text = "\n\n".join(f"[PAGE {i + 1}]\n{t}" for i, t in enumerate(pages[:6]))[:30000]
+    data = llm.complete_json(LLM_METHODOLOGY_SYSTEM, f"Paper text excerpt:\n{text}")
+    canonical_arch = str(data.get("canonical_architecture") or "mlp").lower()
+    domain = str(data.get("domain") or "tabular").lower()
+    return {
+        "architecture": canonical_arch,
+        "domain": domain,
+        "canonical_architecture": canonical_arch,
+        "canonical_domain": domain,
+        "architecture_name": data.get("architecture_name") or canonical_arch.upper(),
+        "model_summary": data.get("model_summary") or "",
+        "components": data.get("components") or [],
+        "framework": data.get("framework") or ("pytorch" if canonical_arch in ("cnn", "resnet", "lstm", "transformer") else "sklearn"),
+        "architecture_details": data.get("architecture_details") or [canonical_arch],
+        "domain_details": data.get("domain_details") or [domain],
+        "source": "gemini",
+    }
+
+
+def detect_methodology_rules(pages: list[str]) -> dict[str, Any]:
+    """Rule-based regex fallback for model architecture & domain detection."""
+    full_text = "\n".join(pages)
+
+    # Score architectures by match count
+    arch_scores: dict[str, int] = {}
+    for tag, pat in _ARCH_KEYWORDS:
+        count = len(pat.findall(full_text))
+        if count > 0:
+            arch_scores[tag] = count
+
+    # Score domains by match count
+    domain_scores: dict[str, int] = {}
+    for tag, pat in _DOMAIN_KEYWORDS:
+        count = len(pat.findall(full_text))
+        if count > 0:
+            domain_scores[tag] = count
+
+    sorted_archs = sorted(arch_scores, key=arch_scores.get, reverse=True)  # type: ignore[arg-type]
+    sorted_domains = sorted(domain_scores, key=domain_scores.get, reverse=True)  # type: ignore[arg-type]
+
+    arch = sorted_archs[0] if sorted_archs else "mlp"
+    domain = sorted_domains[0] if sorted_domains else "tabular"
+
+    return {
+        "architecture": arch,
+        "domain": domain,
+        "canonical_architecture": arch,
+        "canonical_domain": domain,
+        "architecture_name": arch.upper(),
+        "model_summary": f"Detected {arch.upper()} architecture for {domain.upper()} task.",
+        "components": [],
+        "framework": "pytorch" if arch in ("cnn", "resnet", "lstm", "transformer") else "sklearn",
+        "architecture_details": sorted_archs,
+        "domain_details": sorted_domains,
+        "source": "rules",
+    }
+
+
+def detect_methodology(pages: list[str]) -> dict[str, Any]:
+    """Detect model architecture & domain using Gemini API when available, falling back to regex rules."""
+    from . import llm
+
+    if llm.enabled():
+        try:
+            return detect_methodology_llm(pages)
+        except Exception:
+            pass
+    return detect_methodology_rules(pages)
+
+
+
 def extract_repo_url(pages: list[str]) -> str | None:
     """Scan pages for GitHub / GitLab repository URLs cited in abstract, footnotes, or text."""
     pattern = re.compile(r"(?:https?://)?(?:www\.)?github\.com/([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+)", re.IGNORECASE)
@@ -317,6 +452,7 @@ def analyze_paper(pdf_path: str) -> dict[str, Any]:
 
     pages = extract_pages(pdf_path)
     discovered_repo = extract_repo_url(pages)
+    methodology = detect_methodology(pages)
     method, note = "regex", None
     if llm.enabled():
         try:
@@ -329,5 +465,5 @@ def analyze_paper(pdf_path: str) -> dict[str, Any]:
     flags = validate(fields, pages)
     attach_bboxes(fields, pdf_path)
     return {"fields": fields, "flags": flags, "n_pages": len(pages), "method": method,
-            "note": note, "discovered_repo": discovered_repo}
+            "note": note, "discovered_repo": discovered_repo, "methodology": methodology}
 

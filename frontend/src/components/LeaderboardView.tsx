@@ -184,22 +184,20 @@ export default function LeaderboardView() {
         <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
           <button
             onClick={() => setViewMode('matrix')}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              viewMode === 'matrix'
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'matrix'
                 ? 'bg-white text-brand-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             <Trophy className="w-3.5 h-3.5 text-brand-600" />
             <span>Leaderboard Matrix</span>
           </button>
           <button
             onClick={() => setViewMode('scatter')}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              viewMode === 'scatter'
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'scatter'
                 ? 'bg-white text-brand-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             <Activity className="w-3.5 h-3.5 text-brand-600" />
             <span>Empirical Scatter Plot (y = x)</span>
@@ -215,11 +213,10 @@ export default function LeaderboardView() {
             <button
               key={v}
               onClick={() => setSelectedVenue(v)}
-              className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all ${
-                selectedVenue === v
+              className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all ${selectedVenue === v
                   ? 'bg-brand-500 text-white shadow-xs'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-              }`}
+                }`}
             >
               {v}
             </button>
@@ -303,13 +300,12 @@ export default function LeaderboardView() {
                       {/* Discrepancy (Delta) */}
                       <td className="py-4 px-4 text-center">
                         {item.diff_pp != null ? (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-mono font-bold text-[11px] ${
-                            Math.abs(item.diff_pp) <= 1.0
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-mono font-bold text-[11px] ${Math.abs(item.diff_pp) <= 1.0
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : Math.abs(item.diff_pp) <= 5.0
                                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
                                 : 'bg-rose-50 text-rose-700 border border-rose-200'
-                          }`}>
+                            }`}>
                             {item.diff_pp >= 0 ? '+' : ''}{item.diff_pp} pp
                           </span>
                         ) : (
@@ -319,13 +315,12 @@ export default function LeaderboardView() {
 
                       {/* Checklist Grade */}
                       <td className="py-4 px-4 text-center">
-                        <span className={`font-mono font-black text-xs px-2.5 py-1 rounded-xl border ${
-                          item.compliance_pct >= 85
+                        <span className={`font-mono font-black text-xs px-2.5 py-1 rounded-xl border ${item.compliance_pct >= 85
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : item.compliance_pct >= 70
                               ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                               : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
+                          }`}>
                           {item.grade} ({item.compliance_pct}%)
                         </span>
                       </td>

@@ -35,7 +35,7 @@ export default function App() {
             }
           />
           <Route
-            path="/projects"
+            path="/my-projects"
             element={
               <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                 <Dashboard initialTab="projects" />

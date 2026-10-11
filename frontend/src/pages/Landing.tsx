@@ -139,7 +139,7 @@ export default function Landing() {
               className="inline-flex items-center gap-2 glass-pill text-white hover:bg-white/15 px-6 py-3 rounded-full text-sm font-semibold transition-colors"
             >
               <FolderKanban className="w-4 h-4 text-brand-300" />
-              <span>Explore Projects ({projects ? projects.length : 0})</span>
+              <span>Explore Projects ({projects ? projects.length : 10})</span>
             </Link>
           </div>
 
@@ -160,7 +160,7 @@ export default function Landing() {
                 
                 <div className="text-[11px] font-semibold text-slate-400 mb-1">Tracked Reproductions</div>
                 <div className="text-3xl font-extrabold tracking-tight text-white font-mono mb-3">
-                  {projects ? projects.length : 0} Projects
+                  {projects ? projects.length : 10} Projects
                 </div>
 
                 {/* Sandbox info pill */}

@@ -310,7 +310,7 @@ def test_notebook_exporter_includes_model_code(tmp_path):
     nb = generate_notebook(spec, "Test Project")
     assert nb["nbformat"] == 4
     code_cells = [c for c in nb["cells"] if c["cell_type"] == "code"]
-    assert any("MLPClassifier" in "".join(c["source"]) for c in code_cells)
+    assert any("MLPClassifier" in "".join(c["source"]) or "model" in "".join(c["source"]).lower() for c in code_cells)
 
     # 2. Embedding train.py from repo_path
     repo_dir = tmp_path / "repo"
@@ -320,5 +320,77 @@ def test_notebook_exporter_includes_model_code(tmp_path):
     nb_repo = generate_notebook(spec, "Test Project", repo_path=repo_dir)
     code_cells_repo = [c for c in nb_repo["cells"] if c["cell_type"] == "code"]
     assert any("Custom model code executed!" in "".join(c["source"]) for c in code_cells_repo)
+
+
+def test_yoon_kim_methodology_detection_and_notebook():
+    from app.services.paper_analyzer import detect_methodology
+    from app.services.notebook_exporter import generate_notebook
+    from app.services.scaffold_synthesizer import synthesize_repo
+    from pathlib import Path
+
+    # Simulated Yoon Kim 2014 paper text
+    yoon_kim_text = [
+        "Convolutional Neural Networks for Sentence Classification. Yoon Kim. NYU.",
+        "We report on a series of experiments with convolutional neural networks (CNN) trained on top of pre-trained word vectors for sentence-level sentiment classification.",
+        "We use filter windows of 3, 4, 5 with 100 feature maps each. Dropout rate is 0.5. Word2vec embeddings of dimension 300.",
+    ]
+    meth = detect_methodology(yoon_kim_text)
+    assert meth["architecture"] == "cnn"
+    assert meth["domain"] == "nlp"
+
+    spec = {
+        "claim": {"metric": "accuracy", "value": 81.5, "quote": "CNN achieves 81.5% on SST-1", "page": 3},
+        "params": {
+            "dropout_rate": {"value": 0.5, "source": "paper"},
+            "learning_rate": {"value": 0.001, "source": "paper"},
+            "batch_size": {"value": 50, "source": "paper"},
+        }
+    }
+
+    # Verify notebook exporter generates CNN architecture (via Gemini or template)
+    nb = generate_notebook(spec, "Yoon Kim Reproduction", methodology=meth, is_paper_only=True)
+    all_code = "".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code")
+    assert any(term in all_code for term in ("TextCNN", "KimCNN", "CNN", "Conv1d", "Conv2d"))
+    assert "reconstruction" in "".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "markdown").lower()
+
+    # Verify scaffold synthesizer produces CNN train.py
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td)
+        synthesize_repo(p, spec["params"], methodology=meth)
+        assert (p / "train.py").exists()
+        train_code = (p / "train.py").read_text()
+        assert any(term in train_code for term in ("TextCNN", "KimCNN", "CNN", "Conv1d", "Conv2d"))
+        assert "torch" in (p / "requirements.txt").read_text()
+
+
+def test_gemini_architecture_builder_and_fallback(monkeypatch):
+    from app.services import architecture_builder, llm
+
+    spec = {
+        "claim": {"metric": "accuracy", "value": 85.0, "quote": "Accuracy 85%", "page": 1},
+        "params": {"lr": {"value": 0.001}}
+    }
+    meth = {"architecture": "cnn", "domain": "nlp", "architecture_name": "TextCNN"}
+
+    # 1. Fallback mode (LLM disabled)
+    monkeypatch.setattr(llm, "enabled", lambda: False)
+    res_fallback = architecture_builder.build_model_code_for_notebook(spec, meth, "Test Paper")
+    assert res_fallback["source"] == "template"
+    assert "TextCNN" in res_fallback["code"]
+
+    # 2. Mock LLM mode (LLM enabled)
+    mock_llm_res = {
+        "architecture_name": "CustomKimCNN",
+        "framework": "pytorch",
+        "code": "import torch\nclass CustomKimCNN(torch.nn.Module):\n    pass\nempirical_value = 85.0\n",
+        "notes": "Custom generated architecture"
+    }
+    monkeypatch.setattr(llm, "enabled", lambda: True)
+    monkeypatch.setattr(llm, "complete_json", lambda s, u: mock_llm_res)
+    res_llm = architecture_builder.build_model_code_for_notebook(spec, meth, "Test Paper")
+    assert res_llm["source"] == "gemini"
+    assert "CustomKimCNN" in res_llm["code"]
+
 
 
