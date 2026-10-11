@@ -136,38 +136,38 @@ export default function IntegrityRadar({ eid }: Props) {
   const isPerturbed = lrDrift !== 0 || batchScale !== 1.0 || seedNoise !== 0
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-indigo-800/40 space-y-6">
+    <div className="bg-gradient-to-br from-blue-50/80 via-white to-slate-50 text-slate-900 rounded-3xl p-6 sm:p-8 shadow-sm border border-blue-200/90 space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-indigo-800/50">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-300 bg-indigo-900/80 px-3 py-1 rounded-full border border-indigo-700/60 flex items-center gap-1.5 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-700 bg-blue-100/90 px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1.5 shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-brand-600" />
               Scientific Integrity Radar & Robustness Scanner
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
             <span>Hyperparameter Cherry-Picking Radar</span>
           </h2>
-          <p className="text-xs text-indigo-200/80 mt-1 max-w-xl leading-relaxed">
+          <p className="text-xs font-semibold text-slate-500 mt-1 max-w-xl leading-relaxed">
             Multidimensional verification envelope comparing ideal published fidelity vs empirical execution under parameter perturbation.
           </p>
         </div>
 
         {/* Dynamic Composite Score Badge */}
-        <div className="flex items-center gap-4 bg-slate-800/80 border border-indigo-700/50 rounded-2xl p-4 shadow-lg shrink-0">
+        <div className="flex items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs shrink-0">
           <div>
-            <div className="text-[10px] text-indigo-300 font-extrabold uppercase tracking-wider">Integrity Index</div>
-            <div className="text-3xl font-black font-mono tracking-tight text-indigo-400">
+            <div className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Integrity Index</div>
+            <div className="text-3xl font-black font-mono tracking-tight text-brand-600">
               {data.composite_score}%
             </div>
             {isPerturbed && (
-              <div className="text-[10px] text-amber-400 font-mono mt-0.5 flex items-center gap-1">
+              <div className="text-[10px] text-amber-600 font-mono font-bold mt-0.5 flex items-center gap-1">
                 <span>Baseline: {data.baseline_composite}%</span>
               </div>
             )}
           </div>
-          <div className="h-10 w-px bg-indigo-800/80" />
+          <div className="h-10 w-px bg-slate-200" />
           <div>
             <div className="text-[10px] text-indigo-300 font-extrabold uppercase tracking-wider">Fragility Status</div>
             <div className={`text-xs font-black uppercase px-2.5 py-1 rounded-full border mt-1 ${data.fragility_index < 20
@@ -189,18 +189,18 @@ export default function IntegrityRadar({ eid }: Props) {
           <div className="relative w-full max-w-[390px] aspect-square flex items-center justify-center">
             <svg
               viewBox={`0 0 ${size} ${size}`}
-              className="w-full h-full filter drop-shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+              className="w-full h-full filter drop-shadow-sm"
             >
               <defs>
-                {/* Glowing Gradients */}
+                {/* Clean Light Gradients */}
                 <radialGradient id="radarCenterGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#2b66ff" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                 </radialGradient>
                 <linearGradient id="polyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.55" />
-                  <stop offset="50%" stopColor="#6366f1" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.4" />
+                  <stop offset="0%" stopColor="#2b66ff" stopOpacity="0.45" />
+                  <stop offset="50%" stopColor="#0284c7" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#059669" stopOpacity="0.3" />
                 </linearGradient>
               </defs>
 
@@ -220,8 +220,8 @@ export default function IntegrityRadar({ eid }: Props) {
                     key={ringIdx}
                     points={ringPoints}
                     fill="none"
-                    stroke="#334155"
-                    strokeWidth="1"
+                    stroke="#e2e8f0"
+                    strokeWidth="1.2"
                     strokeDasharray={level === 1.0 ? 'none' : '3 3'}
                   />
                 )
@@ -237,8 +237,8 @@ export default function IntegrityRadar({ eid }: Props) {
                     y1={cy}
                     x2={x}
                     y2={y}
-                    stroke="#475569"
-                    strokeWidth="1"
+                    stroke="#cbd5e1"
+                    strokeWidth="1.2"
                   />
                 )
               })}
@@ -247,10 +247,10 @@ export default function IntegrityRadar({ eid }: Props) {
               <polygon
                 points={idealPolygonPoints}
                 fill="none"
-                stroke="#38bdf8"
+                stroke="#93c5fd"
                 strokeWidth="1.5"
                 strokeDasharray="4 4"
-                opacity="0.5"
+                opacity="0.7"
               />
 
               {/* Baseline Polygon (if perturbed) */}
@@ -258,10 +258,10 @@ export default function IntegrityRadar({ eid }: Props) {
                 <polygon
                   points={baselinePolygonPoints}
                   fill="none"
-                  stroke="#64748b"
+                  stroke="#94a3b8"
                   strokeWidth="1.5"
                   strokeDasharray="2 2"
-                  opacity="0.6"
+                  opacity="0.8"
                 />
               )}
 
@@ -269,7 +269,7 @@ export default function IntegrityRadar({ eid }: Props) {
               <polygon
                 points={currentPolygonPoints}
                 fill="url(#polyGrad)"
-                stroke="#60a5fa"
+                stroke="#2b66ff"
                 strokeWidth="2.5"
                 className="transition-all duration-300"
               />
@@ -283,11 +283,11 @@ export default function IntegrityRadar({ eid }: Props) {
                     <circle
                       cx={x}
                       cy={y}
-                      r={isHovered ? 6 : 4}
-                      fill={isHovered ? '#38bdf8' : '#60a5fa'}
+                      r={isHovered ? 6 : 4.5}
+                      fill={isHovered ? '#1d4ed8' : '#2b66ff'}
                       stroke="#ffffff"
-                      strokeWidth="2"
-                      className="cursor-pointer transition-all duration-200"
+                      strokeWidth="2.5"
+                      className="cursor-pointer transition-all duration-200 shadow-sm"
                       onMouseEnter={() => setHoveredAxis(i)}
                       onMouseLeave={() => setHoveredAxis(null)}
                     />
@@ -298,7 +298,7 @@ export default function IntegrityRadar({ eid }: Props) {
               {/* Dimension Labels around perimeter */}
               {data.axes.map((axis, i) => {
                 const angle = (Math.PI * 2 / numAxes) * i - Math.PI / 2
-                const labelRadius = radius + 22
+                const labelRadius = radius + 24
                 const lx = cx + labelRadius * Math.cos(angle)
                 const ly = cy + labelRadius * Math.sin(angle)
 
@@ -308,9 +308,9 @@ export default function IntegrityRadar({ eid }: Props) {
                     key={i}
                     x={lx}
                     y={ly}
-                    fill={isHovered ? '#38bdf8' : '#94a3b8'}
-                    fontSize="10"
-                    fontWeight="700"
+                    fill={isHovered ? '#2b66ff' : '#475569'}
+                    fontSize="10.5"
+                    fontWeight="800"
                     textAnchor="middle"
                     dominantBaseline="central"
                     className="cursor-pointer select-none transition-colors"
@@ -327,10 +327,10 @@ export default function IntegrityRadar({ eid }: Props) {
           {/* Active Hover Dimension Tooltip */}
           <div className="h-10 mt-2 text-center">
             {hoveredAxis !== null ? (
-              <div className="text-xs bg-slate-800/90 border border-indigo-700/60 rounded-xl px-4 py-1.5 inline-flex items-center gap-2">
-                <span className="font-extrabold text-indigo-300">{data.axes[hoveredAxis].dimension}:</span>
-                <span className="font-mono font-black text-white">{data.axes[hoveredAxis].score}%</span>
-                <span className="text-slate-400 text-[11px]">— {data.axes[hoveredAxis].description}</span>
+              <div className="text-xs bg-white border border-slate-200/90 rounded-xl px-4 py-1.5 inline-flex items-center gap-2 shadow-sm">
+                <span className="font-extrabold text-brand-700">{data.axes[hoveredAxis].dimension}:</span>
+                <span className="font-mono font-black text-slate-900">{data.axes[hoveredAxis].score}%</span>
+                <span className="text-slate-500 font-medium text-[11px]">— {data.axes[hoveredAxis].description}</span>
               </div>
             ) : (
               <span className="text-[11px] text-slate-400 font-mono italic">
@@ -342,30 +342,30 @@ export default function IntegrityRadar({ eid }: Props) {
 
         {/* Interactive Perturbation Stress Controls & Sensitivity Landscape */}
         <div className="lg:col-span-6 space-y-5">
-          <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-sm font-extrabold text-white tracking-wide uppercase">
+                <Sliders className="w-4 h-4 text-brand-600" />
+                <h3 className="text-sm font-extrabold text-slate-900 tracking-wide uppercase">
                   Hyperparameter Stress Simulator
                 </h3>
               </div>
               {isPerturbed && (
                 <button
                   onClick={handleReset}
-                  className="inline-flex items-center gap-1.5 text-xs text-indigo-300 hover:text-white bg-indigo-900/60 hover:bg-indigo-900 px-3 py-1 rounded-full border border-indigo-700/60 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-3 py-1 rounded-full transition-colors shadow-xs"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>Reset to Ground Truth</span>
+                  <span>Reset to Baseline</span>
                 </button>
               )}
             </div>
 
             {/* Slider 1: Learning Rate Drift */}
             <div className="space-y-1.5 mb-4">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-300">Learning Rate Shift (ΔLR)</span>
-                <span className="font-mono text-indigo-400 font-bold">
+              <div className="flex justify-between text-xs font-extrabold">
+                <span className="text-slate-800">Learning Rate Shift (ΔLR)</span>
+                <span className="font-mono text-brand-600 font-extrabold">
                   {lrDrift > 0 ? `+${lrDrift}%` : `${lrDrift}%`}
                 </span>
               </div>
@@ -376,9 +376,9 @@ export default function IntegrityRadar({ eid }: Props) {
                 step="5"
                 value={lrDrift}
                 onChange={e => triggerStressTest(Number(e.target.value), batchScale, seedNoise)}
-                className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg appearance-none"
+                className="w-full accent-brand-600 cursor-pointer h-1.5 bg-slate-100 border border-slate-200 rounded-lg appearance-none"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <div className="flex justify-between text-[10px] text-slate-500 font-mono font-semibold">
                 <span>-30% (Under-tuned)</span>
                 <span>0% (Paper Baseline)</span>
                 <span>+30% (Over-tuned)</span>
@@ -387,9 +387,9 @@ export default function IntegrityRadar({ eid }: Props) {
 
             {/* Slider 2: Batch Size Perturbation */}
             <div className="space-y-1.5 mb-4">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-300">Batch Size Scaling Factor</span>
-                <span className="font-mono text-indigo-400 font-bold">{batchScale}x</span>
+              <div className="flex justify-between text-xs font-extrabold">
+                <span className="text-slate-800">Batch Size Scaling Factor</span>
+                <span className="font-mono text-brand-600 font-extrabold">{batchScale}x</span>
               </div>
               <input
                 type="range"
@@ -398,9 +398,9 @@ export default function IntegrityRadar({ eid }: Props) {
                 step="0.25"
                 value={batchScale}
                 onChange={e => triggerStressTest(lrDrift, Number(e.target.value), seedNoise)}
-                className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg appearance-none"
+                className="w-full accent-brand-600 cursor-pointer h-1.5 bg-slate-100 border border-slate-200 rounded-lg appearance-none"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <div className="flex justify-between text-[10px] text-slate-500 font-mono font-semibold">
                 <span>0.5x (Smaller)</span>
                 <span>1.0x (Original)</span>
                 <span>2.0x (Doubled)</span>
@@ -409,9 +409,9 @@ export default function IntegrityRadar({ eid }: Props) {
 
             {/* Slider 3: Seed Variance Noise */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-300">Seed Stochasticity Stress</span>
-                <span className="font-mono text-indigo-400 font-bold">+{seedNoise}%</span>
+              <div className="flex justify-between text-xs font-extrabold">
+                <span className="text-slate-800">Seed Stochasticity Stress</span>
+                <span className="font-mono text-brand-600 font-extrabold">+{seedNoise}%</span>
               </div>
               <input
                 type="range"
@@ -420,9 +420,9 @@ export default function IntegrityRadar({ eid }: Props) {
                 step="10"
                 value={seedNoise}
                 onChange={e => triggerStressTest(lrDrift, batchScale, Number(e.target.value))}
-                className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg appearance-none"
+                className="w-full accent-brand-600 cursor-pointer h-1.5 bg-slate-100 border border-slate-200 rounded-lg appearance-none"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <div className="flex justify-between text-[10px] text-slate-500 font-mono font-semibold">
                 <span>Deterministic</span>
                 <span>Moderate Dispersion</span>
                 <span>High Variance</span>
@@ -431,18 +431,18 @@ export default function IntegrityRadar({ eid }: Props) {
           </div>
 
           {/* Fragility Diagnostics Box */}
-          <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">
                 Cherry-Picking Fragility Score
               </span>
-              <span className="font-mono text-sm font-black text-rose-400">
+              <span className="font-mono text-xs font-black text-rose-600">
                 {data.fragility_index}% Fragility
               </span>
             </div>
 
             {/* Progress bar */}
-            <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden flex">
+            <div className="w-full bg-slate-100 border border-slate-200 rounded-full h-2 overflow-hidden flex">
               <div
                 style={{ width: `${Math.min(100, data.fragility_index)}%` }}
                 className={`h-full transition-all duration-300 ${data.fragility_index < 20
@@ -454,14 +454,14 @@ export default function IntegrityRadar({ eid }: Props) {
               />
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+            <p className="text-xs text-slate-700 leading-relaxed font-semibold">
               {data.basin_description}
             </p>
 
             {isPerturbed && (
-              <div className="bg-slate-900/90 rounded-xl p-2.5 flex items-center justify-between text-xs font-mono border border-slate-700/60">
-                <span className="text-slate-400">Projected Discrepancy (Δ):</span>
-                <span className="font-extrabold text-amber-400">
+              <div className="bg-slate-50 rounded-xl p-2.5 flex items-center justify-between text-xs font-mono border border-slate-200/80">
+                <span className="text-slate-600 font-semibold">Projected Discrepancy (Δ):</span>
+                <span className="font-extrabold text-amber-700">
                   +{data.projected_delta_pp} pp drift
                 </span>
               </div>
@@ -470,10 +470,10 @@ export default function IntegrityRadar({ eid }: Props) {
 
           {/* Sensitivity Neighborhood Spline */}
           {data.sensitivity_curve && data.sensitivity_curve.length > 0 && (
-            <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-3.5">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs">
+              <div className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
                 <span>Learning Rate Sensitivity Neighborhood</span>
-                <span className="text-[10px] text-indigo-300 font-mono">±30% Range</span>
+                <span className="text-[10px] text-brand-600 font-mono font-bold">±30% Range</span>
               </div>
               <div className="flex items-end justify-between gap-1.5 h-12 pt-2">
                 {data.sensitivity_curve.map((pt, idx) => {
@@ -492,7 +492,7 @@ export default function IntegrityRadar({ eid }: Props) {
                           }`}
                         title={`LR ${pt.drift_pct}% -> Est Acc: ${pt.projected_acc}% (Fidelity: ${pt.fidelity}%)`}
                       />
-                      <span className="text-[9px] font-mono text-slate-500">
+                      <span className="text-[9px] font-mono font-semibold text-slate-500">
                         {pt.drift_pct}%
                       </span>
                     </div>
@@ -506,3 +506,4 @@ export default function IntegrityRadar({ eid }: Props) {
     </div>
   )
 }
+
