@@ -12,7 +12,8 @@ import {
   CheckCircle2,
   Sparkles,
   FolderGit2,
-  ExternalLink
+  ExternalLink,
+  Zap
 } from 'lucide-react'
 
 export default function Analysis() {
@@ -253,8 +254,8 @@ export default function Analysis() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-sm text-slate-900">Paper-Only Autonomous Benchmark Scaffold</span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
-                  ⚡ Autonomous Synthesis
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-indigo-600" /> Autonomous Synthesis
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">

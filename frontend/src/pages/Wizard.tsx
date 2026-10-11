@@ -9,7 +9,8 @@ import {
   AlertCircle,
   FolderGit2,
   CheckCircle2,
-  ArrowLeft
+  ArrowLeft,
+  Zap
 } from 'lucide-react'
 import { api, errMsg } from '../api/client'
 
@@ -143,8 +144,8 @@ export default function Wizard() {
                   <span className="font-extrabold text-slate-900 block text-sm">
                     Paper-Only Reproduction Mode (No Source Code Available)
                   </span>
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
-                    ⚡ Autonomous Synthesis
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-indigo-600" /> Autonomous Synthesis
                   </span>
                 </div>
                 <p className="text-slate-600 mt-1 leading-relaxed">

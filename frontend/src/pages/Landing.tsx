@@ -82,11 +82,11 @@ export default function Landing() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-white to-cyan-300">
                   AI Research Claims
                 </span>
-                <span className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-brand-500/20 border border-brand-400/40 text-brand-300 text-2xl shadow-glow">
-                  ⚡
+                <span className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-brand-500/20 border border-brand-400/40 text-brand-300 shadow-glow">
+                  <Zap className="w-5 h-5" />
                 </span>
-                <span className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-2xl">
-                  🔬
+                <span className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300">
+                  <Cpu className="w-5 h-5" />
                 </span>
               </span>
             </h1>
@@ -137,7 +137,7 @@ export default function Landing() {
                 </div>
 
                 {/* Sandbox info pill */}
-                <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between border border-white/10">
+                <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between border border-white/10 mb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-xl bg-brand-500/40 flex items-center justify-center text-brand-300 shrink-0">
                       <ShieldCheck className="w-4 h-4" />
@@ -147,6 +147,21 @@ export default function Landing() {
                       <div className="text-xs font-extrabold text-white">
                         {docker ? 'Docker Non-Root' : 'Virtualenv Mode'}
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visual Preview Image */}
+                <div className="relative rounded-2xl overflow-hidden border border-white/10 h-28 bg-slate-950">
+                  <img
+                    src="/telemetry-preview.jpg"
+                    alt="Real-Time Telemetry Pipeline"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2.5">
+                    <div className="flex items-center gap-1.5 text-cyan-300 text-[10px] font-mono">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                      <span>AST & Container Telemetry Live</span>
                     </div>
                   </div>
                 </div>
@@ -177,18 +192,18 @@ export default function Landing() {
                 </div>
 
                 {/* Radial Score Pill */}
-                <div className="flex items-center justify-center gap-3 bg-blue-50/70 border border-blue-100 rounded-2xl p-2.5 mb-4">
+                <div className="flex items-center justify-center gap-3 bg-blue-50/70 border border-blue-100 rounded-2xl p-2.5 mb-3">
                   <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-brand-200 flex items-center justify-center font-bold text-brand-600 text-xs font-mono shrink-0">
                     94%
                   </div>
                   <div className="text-left text-xs font-medium text-slate-700 leading-tight">
-                    Reproducibility match expected within <b className="text-slate-900">±2.0 pp</b> tolerance 🔥
+                    Reproducibility match expected within <b className="text-slate-900">±2.0%</b> tolerance
                   </div>
                 </div>
               </div>
 
               {/* Hero Visual Image */}
-              <div className="relative rounded-2xl overflow-hidden shadow-inner border border-slate-200 h-32 bg-slate-900 mt-2">
+              <div className="relative rounded-2xl overflow-hidden shadow-inner border border-slate-200 h-28 bg-slate-900">
                 <img
                   src="/hero-preview.jpg"
                   alt="High-Tech AI Research Laboratory and Neural Network"
@@ -216,12 +231,27 @@ export default function Landing() {
                 </div>
 
                 <div className="text-[11px] font-semibold text-slate-400 mb-1">Empirical Accuracy Result</div>
-                <div className="text-3xl font-extrabold text-cyan-300 font-mono tracking-tight mb-2">
+                <div className="text-3xl font-extrabold text-cyan-300 font-mono tracking-tight mb-1">
                   96.5%
                 </div>
                 <div className="text-xs text-slate-300 font-medium mb-3 flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold">Delta: 0.04 pp</span>
+                  <span className="text-emerald-400 font-bold">Delta: 0.04 points</span>
                   <span>· Deterministic</span>
+                </div>
+
+                {/* Visual Preview Image */}
+                <div className="relative rounded-2xl overflow-hidden border border-white/10 h-28 bg-slate-950">
+                  <img
+                    src="/verification-preview.jpg"
+                    alt="Empirical Claim Verification Pipeline"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2.5">
+                    <div className="flex items-center gap-1.5 text-emerald-300 text-[10px] font-mono">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span>Deterministic Audit Passed</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -297,7 +327,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-sans font-semibold">Metric Delta</span>
-                    <span className="font-bold text-slate-900 text-sm">+0.04 pp</span>
+                    <span className="font-bold text-slate-900 text-sm">+0.04%</span>
                   </div>
                 </div>
               </div>
@@ -346,7 +376,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] uppercase font-sans font-semibold">Metric Delta</span>
-                    <span className="font-bold text-rose-600 text-sm">-5.53 pp</span>
+                    <span className="font-bold text-rose-600 text-sm">-5.53%</span>
                   </div>
                 </div>
               </div>
