@@ -1,3 +1,4 @@
+import KpiInfo from './KpiInfo'
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export default function SeedChart({
@@ -17,7 +18,11 @@ export default function SeedChart({
   return (
     <div className="h-72 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm">
       <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
-        <span>Seed Dispersion Chart</span>
+        <span className="flex items-center gap-1">
+          Seed Dispersion Chart
+          <KpiInfo term="seed_chart" value={data.map(d => `${d.seed}: ${d.value.toFixed(2)}${unit}`).join(', ')}
+            data={{ published, unit }} />
+        </span>
         {published != null && (
           <span className="text-[11px] font-mono text-rose-600 flex items-center gap-1.5">
             <span className="w-3 h-0.5 bg-rose-500 inline-block" /> Published Benchmark: {published}{unit}

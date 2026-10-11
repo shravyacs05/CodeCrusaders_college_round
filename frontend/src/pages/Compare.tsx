@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, errMsg } from '../api/client'
 import { useProject } from './ProjectLayout'
+import KpiInfo from '../components/KpiInfo'
 import { GitCompare, ArrowRight, CheckCircle2, AlertCircle, Sliders, GitBranch } from 'lucide-react'
 
 export default function Compare() {
@@ -88,8 +89,10 @@ export default function Compare() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Config Changes Card */}
             <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
-              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-4">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                 Configuration Deltas
+                <KpiInfo term="config_deltas"
+                  value={res.changes.length ? res.changes.map((c: any) => `${c.param}: ${c.from ?? 'MISSING'} → ${c.to ?? 'MISSING'}`).join(', ') : 'no changes'} />
               </h3>
               {res.changes.length === 0 ? (
                 <p className="text-xs text-slate-500 italic">No parameter configuration changes between these versions.</p>
@@ -120,8 +123,13 @@ export default function Compare() {
             {/* Metric Difference Card */}
             <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3">
+                <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   Empirical Metric Impact
+                  <KpiInfo term="metric_impact" eid={b}
+                    value={res.metric_delta_pp == null ? 'not available (both versions need runs)'
+                      : `${(typeof res.metric_delta_pp === 'number' ? res.metric_delta_pp : res.metric_delta_pp.accuracy_pp).toFixed(2)} pp`}
+                    data={{ from_version: exps.find(e => e.id === a)?.version, to_version: exps.find(e => e.id === b)?.version,
+                      changes: res.changes, single_factor: res.single_factor, note: res.note }} />
                 </h3>
                 {res.metric_delta_pp != null ? (
                   <div className="pt-2">

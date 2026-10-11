@@ -13,7 +13,7 @@ from .config import DATA_DIR, TOLERANCE_PP
 from .services import (architecture_builder, checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
                        paper_analyzer, reconciler, repo_scanner, report, runner,
                        spec_builder, verifier, versioning, robustness_radar, xai_explainer,
-                       scaffold_synthesizer)
+                       scaffold_synthesizer, kpi_assistant, llm)
 
 app = FastAPI(title="CrisisGrid")
 if (Path(__file__).resolve().parents[2] / "frontend" / "dist" / "assets").exists():
@@ -589,6 +589,41 @@ def compare(a: str, b: str):
     ma = {"mean": va["reproduced_mean"]} if "reproduced_mean" in va else None
     mb = {"mean": vb["reproduced_mean"]} if "reproduced_mean" in vb else None
     return versioning.compare(ea["spec"], eb["spec"], ma, mb)
+
+
+@app.get("/ask/status")
+def ask_status():
+    return {"enabled": llm.enabled()}
+
+
+@app.post("/projects/{pid}/ask")
+def ask_about_kpi(pid: str, body: dict = Body(...)):
+    """Answer a question about one KPI card.
+
+    Body: {messages, experiment_id?, focus: {title, definition, value?}, card_data?}"""
+    proj = load(pid)
+    focus = body.get("focus") or {}
+    if not focus.get("title"):
+        raise HTTPException(400, "focus.title is required")
+    if not llm.enabled():
+        raise HTTPException(503, "The assistant needs an LLM: set LLM_PROVIDER, LLM_MODEL and "
+                                 "LLM_API_KEY in .env and restart the server.")
+    exps = proj.get("experiments", {})
+    eid = body.get("experiment_id")
+    exp = exps.get(eid) if eid in exps else kpi_assistant.latest_experiment(exps)
+    ver = None
+    if exp and (proj.get("runs") or {}).get(exp["id"]):
+        try:
+            ver = _verification(proj, exp["id"])
+        except Exception:
+            ver = None
+    ctx = kpi_assistant.build_context(proj, exp, ver, body.get("card_data"))
+    try:
+        return {"answer": kpi_assistant.answer(body.get("messages") or [], ctx, focus)}
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except llm.LLMError as e:
+        raise HTTPException(502, str(e))
 
 
 @app.get("/projects/{pid}/report", response_class=HTMLResponse)

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { api, errMsg } from '../api/client'
 import { useStatus } from '../useStatus'
 import { useProject } from './ProjectLayout'
+import KpiInfo from '../components/KpiInfo'
 import {
   Play,
   CheckCircle2,
@@ -185,8 +186,9 @@ export default function Run() {
                   <Activity className="w-4 h-4 text-brand-600" />
                   <span>State: <b className="uppercase text-brand-600">{status.state}</b></span>
                 </span>
-                <span className="font-mono font-semibold text-slate-600">
+                <span className="font-mono font-semibold text-slate-600 flex items-center gap-1">
                   {status.seeds_done} of {status.seeds_total} seeds completed ({progressPercent}%)
+                  <KpiInfo term="run_progress" value={`${status.state}: ${status.seeds_done}/${status.seeds_total} seeds`} />
                 </span>
               </div>
 
@@ -200,8 +202,10 @@ export default function Run() {
 
             {/* Stage Nodes Badges */}
             <div className="space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                 Execution Stage Graph Status:
+                <KpiInfo term="stage_status"
+                  value={Object.entries<string>(status.nodes || {}).map(([n, s]) => `${n}: ${s}`).join(', ')} />
               </span>
               <div className="flex gap-2.5 flex-wrap">
                 {Object.entries<string>(status.nodes || {}).map(([n, s]) => {
@@ -298,8 +302,20 @@ export default function Run() {
                   <tr>
                     <th className="p-3.5">Seed Index</th>
                     <th className="p-3.5">Execution Status</th>
-                    <th className="p-3.5">{status.metric ? status.metric.toUpperCase() : 'Measured Metric'}</th>
-                    <th className="p-3.5">Isolation Sandbox</th>
+                    <th className="p-3.5">
+                      <span className="inline-flex items-center gap-1">
+                        {status.metric ? status.metric.toUpperCase() : 'Measured Metric'}
+                        <KpiInfo term="seed_metric"
+                          value={(status.seeds || []).map((s: any) => `seed ${s.seed}: ${s.value != null ? s.value.toFixed(2) + (status.percent ? '%' : '') : '—'}`).join(', ')}
+                          data={{ metric: status.metric, metric_error: status.metric_error }} />
+                      </span>
+                    </th>
+                    <th className="p-3.5">
+                      <span className="inline-flex items-center gap-1">
+                        Isolation Sandbox
+                        <KpiInfo term="isolation" value={[...new Set((status.seeds || []).map((s: any) => s.isolation))].join(', ')} />
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

@@ -4,6 +4,7 @@ import SeedChart from '../components/SeedChart'
 import IntegrityRadar from '../components/IntegrityRadar'
 import { StatusPill } from '../components/ProvenanceBadge'
 import XAIAttributionCard from '../components/XAIAttributionCard'
+import KpiInfo from '../components/KpiInfo'
 import { useProject } from './ProjectLayout'
 import { ShieldCheck, AlertCircle, Info, CheckCircle2, TrendingUp, Sliders, Check, X } from 'lucide-react'
 
@@ -46,8 +47,9 @@ export default function Verify() {
         <div className="w-12 h-12 rounded-2xl bg-slate-200 text-slate-600 flex items-center justify-center mx-auto mb-3">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <div className="mb-2">
+        <div className="mb-2 flex items-center justify-center gap-1.5">
           <StatusPill s="BLOCKED" />
+          <KpiInfo term="verdict" value={`BLOCKED: ${ver.reason}`} />
         </div>
         <h3 className="text-lg font-bold text-slate-900 mb-2">Verification Blocked</h3>
         <p className="text-xs text-slate-600 leading-relaxed">
@@ -72,6 +74,8 @@ export default function Verify() {
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
               <span>Reproducibility Verdict</span>
               <StatusPill s={ver.status} />
+              <KpiInfo term="verdict" value={ver.status}
+                data={{ diff_pp: ver.diff_pp, tolerance_pp: ver.tolerance_pp, in_range: ver.in_range, within_2std: ver.within_2std }} />
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               Strict deterministic comparison between published claim and empirical sandboxed runs.
@@ -79,7 +83,9 @@ export default function Verify() {
           </div>
 
           <div className="sm:text-right">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tolerance Rule</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center sm:justify-end gap-1">
+              Tolerance Rule <KpiInfo term="tolerance_rule" value={ver.rule} />
+            </div>
             <div className="text-xs font-mono font-semibold text-slate-800 mt-1 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200">
               {ver.rule}
             </div>
@@ -89,7 +95,9 @@ export default function Verify() {
         {/* 4 Stat Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">
           <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Published Claim</div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              Published Claim <KpiInfo term="published_claim" value={`${ver.published}${unit}`} />
+            </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono mt-1">
               {ver.published}{unit}
             </div>
@@ -97,7 +105,9 @@ export default function Verify() {
           </div>
 
           <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reproduced Mean</div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              Reproduced Mean <KpiInfo term="reproduced_mean" value={`${ver.reproduced_mean.toFixed(2)}${unit} over n=${ver.n} seeds`} />
+            </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-brand-600 font-mono mt-1">
               {ver.reproduced_mean.toFixed(2)}{unit}
             </div>
@@ -105,7 +115,9 @@ export default function Verify() {
           </div>
 
           <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Metric Delta</div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              Metric Delta <KpiInfo term="metric_delta" value={`${ver.diff_pp.toFixed(2)} pp (tolerance ±${ver.tolerance_pp} pp)`} />
+            </div>
             <div className={`text-2xl sm:text-3xl font-extrabold font-mono mt-1 ${Math.abs(ver.diff_pp) <= ver.tolerance_pp ? 'text-emerald-600' : 'text-rose-600'
               }`}>
               {ver.diff_pp >= 0 ? '+' : ''}{ver.diff_pp.toFixed(2)} pp
@@ -114,7 +126,9 @@ export default function Verify() {
           </div>
 
           <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Dispersion (Std)</div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              Dispersion (Std) <KpiInfo term="std_dispersion" value={`std ${ver.std.toFixed(2)}, range ${ver.min.toFixed(2)}–${ver.max.toFixed(2)}`} />
+            </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-slate-800 font-mono mt-1">
               {ver.std.toFixed(2)}
             </div>
@@ -137,8 +151,9 @@ export default function Verify() {
 
       {/* Verification Criteria Ledger */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm">
-        <h3 className="text-lg font-extrabold text-slate-900 mb-4 tracking-tight">
+        <h3 className="text-lg font-extrabold text-slate-900 mb-4 tracking-tight flex items-center gap-1.5">
           Statistical Criteria Ledger
+          <KpiInfo term="criteria_ledger" value={`in seed range: ${ver.in_range}, within mean ± 2 std: ${ver.within_2std}`} />
         </h3>
 
         <div className="overflow-hidden border border-slate-200/90 rounded-2xl">

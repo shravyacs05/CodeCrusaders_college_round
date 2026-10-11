@@ -9,6 +9,7 @@ import {
   Info
 } from 'lucide-react'
 import { api } from '../api/client'
+import KpiInfo from './KpiInfo'
 
 interface AxisData {
   dimension: string
@@ -157,7 +158,12 @@ export default function IntegrityRadar({ eid }: Props) {
         {/* Dynamic Composite Score Badge */}
         <div className="flex items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs shrink-0">
           <div>
-            <div className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Integrity Index</div>
+            <div className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider flex items-center gap-1">
+              Integrity Index
+              <KpiInfo term="integrity_index" eid={eid}
+                value={isPerturbed ? `${data.composite_score}% (baseline ${data.baseline_composite}%)` : `${data.composite_score}%`}
+                data={{ axes: data.axes.map(a => ({ axis: a.dimension, score: a.score, baseline: a.baseline })) }} />
+            </div>
             <div className="text-3xl font-black font-mono tracking-tight text-brand-600">
               {data.composite_score}%
             </div>
@@ -169,7 +175,11 @@ export default function IntegrityRadar({ eid }: Props) {
           </div>
           <div className="h-10 w-px bg-slate-200" />
           <div>
-            <div className="text-[10px] text-indigo-300 font-extrabold uppercase tracking-wider">Fragility Status</div>
+            <div className="text-[10px] text-indigo-300 font-extrabold uppercase tracking-wider flex items-center gap-1">
+              Fragility Status
+              <KpiInfo term="fragility" eid={eid} value={`${data.basin_type} (${data.fragility_index}% fragility)`}
+                data={{ stress_inputs: data.stress_inputs, projected_delta_pp: data.projected_delta_pp }} />
+            </div>
             <div className={`text-xs font-black uppercase px-2.5 py-1 rounded-full border mt-1 ${data.fragility_index < 20
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
                 : data.fragility_index < 45
@@ -349,6 +359,9 @@ export default function IntegrityRadar({ eid }: Props) {
                 <h3 className="text-sm font-extrabold text-slate-900 tracking-wide uppercase">
                   Hyperparameter Stress Simulator
                 </h3>
+                <KpiInfo term="stress_simulator" eid={eid}
+                  value={`LR ${lrDrift}%, batch ${batchScale}x, seed noise +${seedNoise}%`}
+                  data={{ projected_delta_pp: data.projected_delta_pp, sensitivity_curve: data.sensitivity_curve }} />
               </div>
               {isPerturbed && (
                 <button

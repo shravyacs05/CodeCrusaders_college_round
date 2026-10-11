@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import DiffTable from '../components/DiffTable'
+import KpiInfo from '../components/KpiInfo'
 import ProvenanceBadge from '../components/ProvenanceBadge'
 import { useProject } from './ProjectLayout'
 import {
@@ -81,7 +82,11 @@ export default function Analysis() {
               </div>
               <div className="flex items-center gap-4 bg-white border border-slate-200/90 rounded-2xl p-3.5 px-5 shadow-xs">
                 <div className="text-right">
-                  <div className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">Compliance Index</div>
+                  <div className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider flex items-center justify-end gap-1">
+                    Compliance Index
+                    <KpiInfo term="compliance_index" value={`${checklistData.score_pct}% · grade ${checklistData.grade}`}
+                      data={checklistData.checklist?.map((c: any) => ({ question: c.question, status: c.status, evidence: c.evidence }))} />
+                  </div>
                   <div className="text-2xl font-black text-brand-600 font-mono">{checklistData.score_pct}%</div>
                 </div>
                 <div className="h-9 w-px bg-slate-200" />
@@ -127,8 +132,11 @@ export default function Analysis() {
                   Methodological Integrity
                 </span>
               </div>
-              <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
                 Data Leakage & Preprocessing Isolation Visualizer
+                <KpiInfo term="leakage_status"
+                  value={leakageData ? (leakageData.clean ? 'no leakage pattern found' : `${leakageData.findings?.length ?? 0} leakage finding(s)`) : undefined}
+                  data={leakageData?.findings} />
               </h2>
             </div>
             {leakageData?.clean ? (
@@ -313,8 +321,10 @@ export default function Analysis() {
             )}
           </div>
 
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mb-4">
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight mb-4 flex items-center gap-1.5">
             Published Paper Claim to Verify
+            <KpiInfo term="claim_target"
+              value={claim?.value != null ? `${claim.metric} = ${claim.value}${claim.percent ? '%' : ''} (p.${claim.page ?? '?'})` : 'no verified claim'} />
           </h2>
 
           {claim?.value != null ? (
@@ -459,8 +469,11 @@ export default function Analysis() {
                 Reconciler Matrix
               </span>
             </div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
               Parameter Reconciliation (Paper vs. Repository Code)
+              <KpiInfo term="reconciliation"
+                value={Object.entries(findings.reduce((acc: Record<string, number>, f: any) => ({ ...acc, [f.status]: (acc[f.status] || 0) + 1 }), {}))
+                  .map(([k, n]) => `${n} ${k}`).join(', ')} />
             </h2>
             <p className="text-xs font-semibold text-slate-500 mt-0.5">
               Normalized aliases (lr, num_epochs, bs, seed, test_size) classified into MATCH, MISMATCH, ONLY_IN_PAPER, or ONLY_IN_CODE.

@@ -1,5 +1,6 @@
 import { Handle, Position } from 'reactflow'
 import ProvenanceBadge from './ProvenanceBadge'
+import KpiInfo from './KpiInfo'
 
 const STATE_STYLE: Record<string, { border: string; bg: string; badge: string }> = {
   pending: {
@@ -39,7 +40,12 @@ export default function GraphNode({ data, selected }: any) {
       <Handle type="target" position={Position.Left} className="!w-2.5 !h-2.5 !bg-brand-500 !border-2 !border-white" />
       
       <div className="flex items-center justify-between mb-2">
-        <span className="font-extrabold text-sm text-slate-900 tracking-tight">{data.label}</span>
+        <span className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-1">
+          {data.label}
+          <KpiInfo term="graph_stage" title={`${data.label} stage`}
+            value={entries.length ? entries.map(([k, v]) => `${k}=${v.value ?? 'MISSING'} (${v.source})`).join(', ') : 'no tracked parameters'}
+            data={{ stage: data.label, run_state: data.state || 'pending', params: data.params }} />
+        </span>
         {data.state && data.state !== 'pending' && (
           <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${st.badge}`}>
             {data.state}

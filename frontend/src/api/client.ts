@@ -6,6 +6,10 @@ export function errMsg(e: any): string {
   return e?.response?.data?.detail || e?.message || 'Request failed'
 }
 
+export type AskMessage = { role: 'user' | 'assistant'; content: string }
+/** The KPI card an (i) question is about. */
+export type AskFocus = { title: string; definition: string; value?: string }
+
 export const api = {
   health: () => http.get('/health').then(r => r.data),
   projects: () => http.get('/projects').then(r => r.data),
@@ -90,6 +94,10 @@ export const api = {
   paperMetadata: (pid: string) => http.get(`/projects/${pid}/paper/metadata`).then(r => r.data),
   leaderboard: () => http.get('/leaderboard').then(r => r.data),
   radar: (eid: string) => http.get(`/experiments/${eid}/radar`).then(r => r.data),
+  askStatus: () => http.get('/ask/status').then(r => r.data as { enabled: boolean }),
+  askAboutKpi: (pid: string, messages: AskMessage[], focus: AskFocus, eid?: string, cardData?: unknown) =>
+    http.post(`/projects/${pid}/ask`, { messages, focus, experiment_id: eid, card_data: cardData })
+      .then(r => r.data.answer as string),
   stressTestRadar: (eid: string, payload: { lr_drift: number; batch_scale: number; seed_noise: number }) =>
     http.post(`/experiments/${eid}/radar/stress-test`, payload).then(r => r.data),
 }

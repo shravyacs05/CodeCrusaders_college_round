@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { api, errMsg } from '../api/client'
 import PaperViewer, { EvidenceItem } from '../components/PaperViewer'
+import KpiInfo from '../components/KpiInfo'
 
 export type Ctx = {
   pid: string
@@ -169,7 +170,10 @@ export default function ProjectLayout() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 {proj.name}
               </h1>
-              {getStatusBadge(proj.status)}
+              <span className="inline-flex items-center gap-1">
+                {getStatusBadge(proj.status)}
+                <KpiInfo term="project_status" pid={pid} eid={eid} value={proj.status} />
+              </span>
               {proj.is_demo && (
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                   Demo Fixture

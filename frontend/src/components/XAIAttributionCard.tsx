@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import KpiInfo from './KpiInfo'
 import { Brain, Sparkles, ArrowRight, FileSearch, Wrench, ChevronDown, ChevronUp } from 'lucide-react'
 
 export interface XAIAttribution {
@@ -204,7 +205,10 @@ export default function XAIAttributionCard({
                 {gapNum >= 0 ? '+' : ''}{gapNum.toFixed(2)}
                 <span className="text-sm font-semibold text-slate-400 ml-1">{unit}</span>
               </div>
-              <div className="text-[10px] text-slate-400">from published</div>
+              <div className="text-[10px] text-slate-400 flex items-center justify-end gap-1">
+                from published
+                <KpiInfo term="xai_gap" value={`${gapNum >= 0 ? '+' : ''}${gapNum.toFixed(2)} ${unit}`} />
+              </div>
             </div>
           )}
         </div>
@@ -214,8 +218,13 @@ export default function XAIAttributionCard({
 
         {/* Contributing factors */}
         <div>
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1">
             Contributing factors
+            <KpiInfo term="contributing_factors"
+              value={attributions.slice(0, 4).map(a => `${a.label} ${a.share_pct}%`).join(', ')}
+              data={{ gap_pp: xai.gap_pp, attributions: attributions.map(a => ({
+                param: a.param, status: a.status, paper_value: a.paper_value, code_value: a.code_value,
+                share_pct: a.share_pct, impact_pp: a.impact_pp })) }} />
           </div>
 
           <div className="space-y-2">
