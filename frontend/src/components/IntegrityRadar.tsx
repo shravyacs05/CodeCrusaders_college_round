@@ -170,13 +170,12 @@ export default function IntegrityRadar({ eid }: Props) {
           <div className="h-10 w-px bg-indigo-800/80" />
           <div>
             <div className="text-[10px] text-indigo-300 font-extrabold uppercase tracking-wider">Fragility Status</div>
-            <div className={`text-xs font-black uppercase px-2.5 py-1 rounded-full border mt-1 ${
-              data.fragility_index < 20
+            <div className={`text-xs font-black uppercase px-2.5 py-1 rounded-full border mt-1 ${data.fragility_index < 20
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
                 : data.fragility_index < 45
                   ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
                   : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
-            }`}>
+              }`}>
               {data.basin_type.replace('_', ' ')}
             </div>
           </div>
@@ -446,13 +445,12 @@ export default function IntegrityRadar({ eid }: Props) {
             <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden flex">
               <div
                 style={{ width: `${Math.min(100, data.fragility_index)}%` }}
-                className={`h-full transition-all duration-300 ${
-                  data.fragility_index < 20
+                className={`h-full transition-all duration-300 ${data.fragility_index < 20
                     ? 'bg-emerald-500'
                     : data.fragility_index < 45
                       ? 'bg-amber-500'
                       : 'bg-rose-500'
-                }`}
+                  }`}
               />
             </div>
 
@@ -486,13 +484,12 @@ export default function IntegrityRadar({ eid }: Props) {
                     <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                       <div
                         style={{ height: `${barHeight}%` }}
-                        className={`w-full rounded-t transition-all ${
-                          isCurrent
+                        className={`w-full rounded-t transition-all ${isCurrent
                             ? 'bg-brand-400 shadow-glow'
                             : isCenter
                               ? 'bg-indigo-400'
                               : 'bg-slate-700'
-                        }`}
+                          }`}
                         title={`LR ${pt.drift_pct}% -> Est Acc: ${pt.projected_acc}% (Fidelity: ${pt.fidelity}%)`}
                       />
                       <span className="text-[9px] font-mono text-slate-500">

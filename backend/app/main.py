@@ -121,14 +121,33 @@ def list_projects():
             p = json.loads(f.read_text())
             status = p.get("status", "analyzed")
             exps = p.get("experiments", {})
-            if exps:
-                root_eid = list(exps.keys())[0]
-                try:
-                    ver = _verification(p, root_eid)
-                    if ver and ver.get("status") in ("REPRODUCED", "NOT_REPRODUCED"):
-                        status = ver["status"]
-                except Exception:
-                    pass
+            runs = p.get("runs", {})
+            if exps and runs:
+                for eid, exp in exps.items():
+                    r = runs.get(eid)
+                    if r and r.get("results"):
+                        claim = exp.get("spec", {}).get("claim")
+                        if claim and claim.get("value") is not None:
+                            try:
+                                claim_val = float(claim["value"])
+                                cm = claim.get("metric", "accuracy").lower()
+                                vals = []
+                                for res in r["results"]:
+                                    m = (res.get("metrics") or {}) if isinstance(res, dict) else {}
+                                    for k, v in m.items():
+                                        kl = k.lower()
+                                        if kl == cm or kl == f"{cm}_score" or kl.replace("_", "") == cm.replace("_", ""):
+                                            val = float(v)
+                                            if claim.get("percent", False) and val <= 1.0:
+                                                val *= 100.0
+                                            vals.append(val)
+                                            break
+                                if vals:
+                                    mean_val = sum(vals) / len(vals)
+                                    status = "REPRODUCED" if abs(mean_val - claim_val) <= TOLERANCE_PP else "NOT_REPRODUCED"
+                                    break
+                            except Exception:
+                                pass
             out.append({
                 "id": p["id"],
                 "name": p["name"],

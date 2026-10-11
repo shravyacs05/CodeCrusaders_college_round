@@ -106,9 +106,8 @@ export default function Verify() {
 
           <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80">
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Metric Delta</div>
-            <div className={`text-2xl sm:text-3xl font-extrabold font-mono mt-1 ${
-              Math.abs(ver.diff_pp) <= ver.tolerance_pp ? 'text-emerald-600' : 'text-rose-600'
-            }`}>
+            <div className={`text-2xl sm:text-3xl font-extrabold font-mono mt-1 ${Math.abs(ver.diff_pp) <= ver.tolerance_pp ? 'text-emerald-600' : 'text-rose-600'
+              }`}>
               {ver.diff_pp >= 0 ? '+' : ''}{ver.diff_pp.toFixed(2)} pp
             </div>
             <div className="text-[10px] text-slate-400 mt-0.5">Tolerance: ±{ver.tolerance_pp} pp</div>
