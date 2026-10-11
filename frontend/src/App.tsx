@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -23,6 +23,14 @@ export default function App() {
             element={
               <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                 <Dashboard />
+              </main>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+                <Dashboard initialTab="projects" />
               </main>
             }
           />
@@ -65,6 +73,7 @@ export default function App() {
             <Route path="compare" element={<Compare />} />
             <Route path="report" element={<Report />} />
           </Route>
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
     </div>

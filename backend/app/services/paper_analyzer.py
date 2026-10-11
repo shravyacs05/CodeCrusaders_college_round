@@ -277,6 +277,122 @@ def render_page_png(pdf_path: str, page_num: int, dpi: int = 144) -> bytes:
         return doc[page_num - 1].get_pixmap(dpi=dpi).tobytes("png")
 
 
+def is_filename_like(s: str) -> bool:
+    """Check if a string resembles a raw file name, arXiv ID, or generic placeholder rather than a paper title."""
+    if not s or len(s.strip()) < 4:
+        return True
+    s_clean = s.strip().lower()
+    if s_clean.endswith(".pdf") or s_clean in (
+        "(anonymous)", "untitled", "unknown", "paper", "default",
+        "output", "main", "draft", "document", "submission"
+    ):
+        return True
+    # If it contains underscores without spaces (typical filename format)
+    if "_" in s_clean and " " not in s_clean:
+        return True
+    # If it is an arXiv ID like 1408.5882 or 1710.09412v2
+    if re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", s_clean):
+        return True
+    return False
+
+
+def extract_title(pdf_path: str, pages: list[str] | None = None) -> str:
+    """Extract genuine research paper title from paper text and layout, never the PDF file name."""
+    import pymupdf
+    from . import llm
+
+    if pages is None:
+        try:
+            pages = extract_pages(pdf_path)
+        except Exception:
+            pages = []
+
+    # 1. High-accuracy extraction using Gemini LLM when available
+    if llm.enabled() and pages and len(pages) > 0:
+        try:
+            prompt = (
+                "Extract the exact academic research paper title from the paper text below.\n"
+                "Do NOT return the file name, arXiv identifier, conference name, author names, or affiliations.\n"
+                "Return ONLY a JSON object: {\"title\": \"<exact title>\"}\n\n"
+                f"Paper Text Excerpt:\n{pages[0][:3000]}"
+            )
+            data = llm.complete_json(
+                "You are an academic literature indexer. Extract the exact published paper title.",
+                prompt
+            )
+            llm_title = (data.get("title") or "").strip()
+            if llm_title and len(llm_title) > 4 and not is_filename_like(llm_title):
+                return llm_title
+        except Exception:
+            pass
+
+    # 2. Deterministic layout & block extraction from first page
+    try:
+        with pymupdf.open(pdf_path) as doc:
+            if len(doc) > 0:
+                page = doc[0]
+                blocks = page.get_text("blocks")
+                candidates: list[str] = []
+
+                for b in blocks[:6]:
+                    txt = " ".join(b[4].split()).strip()
+                    if not txt:
+                        continue
+                    # Skip header artifacts (arXiv stamps, publication/conference banners, DOIs)
+                    if re.match(r"^(?:arxiv|published as|under review|proceedings|doi|https?://|accepted|volume|vol\.|journal|copyright)", txt, re.I):
+                        continue
+                    # Stop at abstract, intro, or author emails
+                    if re.match(r"^(?:abstract|1\.?\s+intro|introduction)", txt, re.I) or "@" in txt:
+                        break
+                    # If this block is a valid text block
+                    if len(txt) > 4 and not is_filename_like(txt):
+                        candidates.append(txt)
+                        # The first non-header block before authors/abstract is usually the full paper title
+                        break
+
+                if candidates:
+                    return candidates[0]
+
+                # Visual font-size hierarchy layout analysis fallback
+                d = page.get_text("dict")
+                spans: list[tuple[float, float, str]] = []
+                for b in d.get("blocks", []):
+                    if "lines" in b:
+                        for l in b["lines"]:
+                            for s in l.get("spans", []):
+                                t = s.get("text", "").strip()
+                                if t and len(t) > 1 and not t.lower().startswith(("arxiv:", "doi:", "http://", "https://", "published")):
+                                    spans.append((float(s.get("size", 10)), float(s.get("bbox", (0, 0, 0, 0))[1]), t))
+
+                if spans:
+                    h = page.rect.height or 792.0
+                    top_spans = [s for s in spans if s[1] < h * 0.45] or spans
+                    max_size = max(s[0] for s in top_spans)
+                    if max_size >= 12.0:
+                        # Include spans within 4pt to account for small-caps or multi-line titles
+                        title_spans = [s[2] for s in top_spans if abs(s[0] - max_size) <= 4.0]
+                        if title_spans:
+                            candidate = " ".join(title_spans).strip()
+                            if not is_filename_like(candidate):
+                                return candidate
+
+            # Check metadata title only if valid and not looking like a file name
+            meta_title = (doc.metadata.get("title") or "").strip()
+            if meta_title and not is_filename_like(meta_title):
+                return meta_title
+    except Exception:
+        pass
+
+    if pages and len(pages) > 0:
+        lines = [l.strip() for l in pages[0].splitlines() if len(l.strip()) > 3]
+        for l in lines[:4]:
+            if not l.lower().startswith(("arxiv", "http", "doi", "abstract", "published")) and not is_filename_like(l):
+                return l
+
+    return "Research Paper Reproduction"
+
+
+
 # ── Methodology & Domain Detection ──────────────────────────────────────────
 
 # Architecture keywords → canonical architecture tag
@@ -464,6 +580,7 @@ def analyze_paper(pdf_path: str) -> dict[str, Any]:
         fields = extract_fields(pages)
     flags = validate(fields, pages)
     attach_bboxes(fields, pdf_path)
-    return {"fields": fields, "flags": flags, "n_pages": len(pages), "method": method,
+    title = extract_title(pdf_path, pages)
+    return {"title": title, "fields": fields, "flags": flags, "n_pages": len(pages), "method": method,
             "note": note, "discovered_repo": discovered_repo, "methodology": methodology}
 

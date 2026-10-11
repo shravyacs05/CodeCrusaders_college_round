@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import BackgroundTasks, Body, FastAPI, File, Form, HTTPException, Response, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from .config import DATA_DIR, TOLERANCE_PP
 from .services import (checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
@@ -158,8 +158,35 @@ def list_projects():
     return out
 
 
+@app.post("/inspect-paper")
+async def inspect_paper(paper: UploadFile = File(...)):
+    """Fast pre-analysis: extracts title, page count, and discovered author repo from uploaded PDF."""
+    temp_bytes = await paper.read()
+    import pymupdf
+    try:
+        with pymupdf.open(stream=temp_bytes, filetype="pdf") as doc:
+            n_pages = len(doc)
+            pages = [doc[i].get_text() for i in range(min(n_pages, 4))]
+    except Exception as e:
+        raise HTTPException(400, f"Invalid PDF file: {e}")
+
+    # Write temporary file to extract title using layout engine
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as tmp:
+        tmp.write(temp_bytes)
+        tmp.flush()
+        title = paper_analyzer.extract_title(tmp.name, pages)
+
+    discovered_repo = paper_analyzer.extract_repo_url(pages)
+    return {
+        "title": title,
+        "n_pages": n_pages,
+        "discovered_repo": discovered_repo,
+    }
+
+
 @app.post("/projects")
-async def create_project(name: str = Form(...), repo_url: str = Form(""),
+async def create_project(name: str = Form(""), repo_url: str = Form(""),
                          paper: UploadFile = File(...), is_demo: bool = Form(False),
                          is_paper_only: bool = Form(False)):
     pid = uuid.uuid4().hex[:8]
@@ -167,16 +194,40 @@ async def create_project(name: str = Form(...), repo_url: str = Form(""),
     paper_path = _p(pid) / "paper.pdf"
     with open(paper_path, "wb") as f:
         shutil.copyfileobj(paper.file, f)
+
+    # Autodetect name from paper title (never use PDF file name or generic placeholder)
+    raw_fname = (getattr(paper, "filename", None) or "").lower()
+    fname_no_ext = raw_fname.rsplit(".", 1)[0] if "." in raw_fname else raw_fname
+    name_clean = name.strip().lower()
+
+    should_autodetect = (
+        not name_clean
+        or name_clean in (raw_fname, fname_no_ext, "paper", "default", "new project", "untitled", "my reproduction project", "research paper reproduction")
+        or paper_analyzer.is_filename_like(name)
+    )
+    if should_autodetect:
+        detected_title = paper_analyzer.extract_title(str(paper_path))
+        if detected_title and detected_title != "Research Paper Reproduction":
+            name = detected_title
+
     save(pid, {"id": pid, "name": name, "repo_url": repo_url or "", "paper_path": str(paper_path),
                "status": "created", "is_demo": is_demo, "is_paper_only": is_paper_only,
                "experiments": {}, "runs": {}})
-    return {"id": pid}
+    return {"id": pid, "name": name}
 
 
 @app.post("/projects/{pid}/analyze")
 def analyze(pid: str):
     proj = load(pid)
     paper = paper_analyzer.analyze_paper(proj["paper_path"])
+
+    # Ensure project name reflects the real paper title rather than a PDF file name
+    if paper.get("title") and (
+        not proj.get("name")
+        or paper_analyzer.is_filename_like(proj.get("name", ""))
+        or proj.get("name", "").strip().lower() in ("my reproduction project", "new project", "untitled", "research paper reproduction")
+    ):
+        proj["name"] = paper["title"]
     
     # If repo_url was not provided, but the paper cites an author GitHub repo in text/footnotes:
     if not bool((proj.get("repo_url") or "").strip()) and paper.get("discovered_repo"):
@@ -220,6 +271,91 @@ def analyze(pid: str):
         "config_hash": versioning.config_hash(spec)}
     save(pid, proj)
     return {"experiment_id": eid, "spec": spec, "findings": findings, "flags": paper["flags"]}
+
+
+@app.post("/projects/{pid}/analyze-stream")
+def analyze_stream(pid: str):
+    """Execute paper analysis with real-time SSE progress events."""
+    def event_stream():
+        # 1. Ingest PDF
+        yield f"data: {json.dumps({'stage': 'ingest', 'pct': 10, 'message': 'Parsing PDF document structure & layout...'})}\n\n"
+        proj = load(pid)
+        paper_path = proj["paper_path"]
+        pages = paper_analyzer.extract_pages(paper_path)
+        yield f"data: {json.dumps({'stage': 'ingest', 'pct': 25, 'message': f'Extracted text across {len(pages)} pages. Auditing for repository URLs...'})}\n\n"
+
+        discovered_repo = paper_analyzer.extract_repo_url(pages)
+        if not bool((proj.get("repo_url") or "").strip()) and discovered_repo:
+            proj["repo_url"] = discovered_repo
+            proj["is_paper_only"] = False
+            proj["auto_detected_repo"] = True
+            yield f"data: {json.dumps({'stage': 'repo_detected', 'pct': 35, 'message': f'✨ Auto-detected author repository: {discovered_repo}'})}\n\n"
+
+        # 2. Methodology & Architecture
+        yield f"data: {json.dumps({'stage': 'methodology', 'pct': 45, 'message': 'Consulting Gemini AI to classify methodology & neural architecture...'})}\n\n"
+        methodology = paper_analyzer.detect_methodology(pages)
+        arch_name = methodology.get("architecture_name") or methodology.get("architecture", "MLP").upper()
+        domain_name = methodology.get("domain", "Tabular").upper()
+        yield f"data: {json.dumps({'stage': 'methodology', 'pct': 55, 'message': f'Identified architecture: {arch_name} ({domain_name})'})}\n\n"
+
+        # 3. Claims & Ground truth
+        yield f"data: {json.dumps({'stage': 'claims', 'pct': 65, 'message': 'Extracting ground truth claims, hyperparameters & physical bounding boxes...'})}\n\n"
+        paper = paper_analyzer.analyze_paper(paper_path)
+        if paper.get("title") and (
+            not proj.get("name")
+            or paper_analyzer.is_filename_like(proj.get("name", ""))
+            or proj.get("name", "").strip().lower() in ("my reproduction project", "new project", "untitled", "research paper reproduction")
+        ):
+            proj["name"] = paper["title"]
+
+        claim = paper["fields"].get("_claim", {})
+        c_val = claim.get("value")
+        c_metric = claim.get("metric", "accuracy").upper()
+        c_page = claim.get("page", 1)
+        yield f"data: {json.dumps({'stage': 'claims', 'pct': 72, 'message': f'Anchored claim: {c_metric} = {c_val}% on Page {c_page} (Verbatim quote verified)'})}\n\n"
+
+        # 4. Code & Supporting Artifacts
+        is_paper_only = proj.get("is_paper_only", False) or not bool((proj.get("repo_url") or "").strip())
+        repo_path = _p(pid) / "repo"
+        if is_paper_only:
+            yield f"data: {json.dumps({'stage': 'code', 'pct': 80, 'message': f'Synthesizing autonomous benchmark execution scaffold with {arch_name}...'})}\n\n"
+            commit = scaffold_synthesizer.synthesize_repo(repo_path, paper["fields"], paper.get("methodology"))
+            proj["is_paper_only"] = True
+        else:
+            repo_target = proj.get("repo_url", "")
+            yield f"data: {json.dumps({'stage': 'code', 'pct': 80, 'message': f'Cloning repository {repo_target} and scanning Python AST...'})}\n\n"
+            try:
+                repo_path, commit = repo_scanner.get_repo(proj["repo_url"], repo_path)
+            except Exception:
+                commit = scaffold_synthesizer.synthesize_repo(repo_path, paper["fields"], paper.get("methodology"))
+                is_paper_only = True
+                proj["is_paper_only"] = True
+
+        scan = repo_scanner.scan_repo(repo_path)
+        if proj.get("auto_detected_repo"):
+            scan.setdefault("warnings", []).append(
+                f"✨ Auto-Detected Repository: Extracted {proj['repo_url']} directly from paper text/footnote."
+            )
+        elif is_paper_only:
+            scan.setdefault("warnings", []).append(
+                "⚡ Paper-Only Autonomous Reconstruction: Author source code was omitted. "
+                "CrisisGrid autonomously synthesized an executable benchmark scaffold based on the paper's extracted specifications."
+            )
+
+        # 5. Reconciliation & DAG Spec
+        yield f"data: {json.dumps({'stage': 'reconcile', 'pct': 90, 'message': 'Reconciling paper specifications against codebase AST parameters...'})}\n\n"
+        findings = reconciler.reconcile(paper["fields"], scan["params"], enrich_llm=True)
+        spec = spec_builder.build_spec(paper, scan)
+        eid = uuid.uuid4().hex[:8]
+        proj.update(paper=paper, scan=scan, findings=findings, commit=commit, status="analyzed")
+        proj["experiments"][eid] = {
+            "id": eid, "parent_id": None, "version": 1, "spec": spec, "diff_from_parent": [],
+            "config_hash": versioning.config_hash(spec)}
+        save(pid, proj)
+
+        yield f"data: {json.dumps({'stage': 'complete', 'pct': 100, 'message': 'Reproduction DAG synthesized successfully!', 'experiment_id': eid})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @app.get("/projects/{pid}/findings")

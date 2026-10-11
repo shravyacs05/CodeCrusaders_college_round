@@ -17,7 +17,48 @@ export const api = {
     f.append('is_paper_only', String(isPaperOnly))
     return http.post('/projects', f).then(r => r.data)
   },
+  inspectPaper: (file: File) => {
+    const f = new FormData()
+    f.append('paper', file)
+    return http.post('/inspect-paper', f).then(r => r.data)
+  },
   analyze: (pid: string) => http.post(`/projects/${pid}/analyze`).then(r => r.data),
+  analyzeStream: async (
+    pid: string,
+    onEvent: (ev: { stage: string; pct: number; message: string; experiment_id?: string }) => void
+  ) => {
+    const response = await fetch(`/projects/${pid}/analyze-stream`, {
+      method: 'POST',
+    })
+    if (!response.ok) {
+      throw new Error(`Analysis stream failed: ${response.statusText}`)
+    }
+    const reader = response.body?.getReader()
+    if (!reader) {
+      return api.analyze(pid)
+    }
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let lastData: any = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6))
+            lastData = data
+            onEvent(data)
+          } catch {}
+        }
+      }
+    }
+    return lastData
+  },
   findings: (pid: string) => http.get(`/projects/${pid}/findings`).then(r => r.data),
   graph: (pid: string, eid?: string) =>
     http.get(`/projects/${pid}/graph`, { params: { experiment_id: eid } }).then(r => r.data),
