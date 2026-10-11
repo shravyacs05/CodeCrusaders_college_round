@@ -1,5 +1,6 @@
 """CrisisGrid API (simplified). State is kept in JSON files under DATA_DIR."""
 import json
+import re
 import shutil
 import threading
 import uuid
@@ -9,7 +10,7 @@ from fastapi import BackgroundTasks, Body, FastAPI, File, Form, HTTPException, R
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from .config import DATA_DIR, TOLERANCE_PP
-from .services import (checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
+from .services import (architecture_builder, checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
                        paper_analyzer, reconciler, repo_scanner, report, runner,
                        spec_builder, verifier, versioning, robustness_radar, xai_explainer,
                        scaffold_synthesizer)
@@ -37,6 +38,45 @@ def load(pid: str) -> dict:
 def save(pid: str, data: dict) -> None:
     with LOCK:
         (_p(pid) / "project.json").write_text(json.dumps(data, indent=2, default=str))
+
+
+# ---------- notebook model-code cache ----------
+# Gemini model synthesis takes several seconds, so it runs in the background and is
+# cached on disk; notebook downloads never wait on the LLM.
+NB_INFLIGHT: set[tuple[str, str]] = set()
+
+
+def _nb_cache(pid: str, eid: str) -> Path:
+    return _p(pid) / f"notebook_model_{eid}.json"
+
+
+def _nb_needs_model(pid: str, proj: dict) -> bool:
+    """True when the notebook uses generated model code instead of the repo's train.py."""
+    return proj.get("is_paper_only", False) or not (_p(pid) / "repo" / "train.py").exists()
+
+
+def _nb_build_model(pid: str, eid: str, spec: dict, methodology: dict | None, name: str) -> None:
+    try:
+        res = architecture_builder.build_model_code_for_notebook(spec, methodology, name)
+        if res.get("source") == "gemini":  # don't pin a rate-limit fallback forever
+            _nb_cache(pid, eid).write_text(json.dumps(res))
+    finally:
+        with LOCK:
+            NB_INFLIGHT.discard((pid, eid))
+
+
+def warm_notebook_model(pid: str, eid: str, proj: dict) -> None:
+    """Start background Gemini synthesis for an experiment's notebook if not cached/running."""
+    if not _nb_needs_model(pid, proj) or _nb_cache(pid, eid).exists():
+        return
+    with LOCK:
+        if (pid, eid) in NB_INFLIGHT:
+            return
+        NB_INFLIGHT.add((pid, eid))
+    spec = proj["experiments"][eid].get("spec", {})
+    methodology = proj.get("paper", {}).get("methodology")
+    threading.Thread(target=_nb_build_model, daemon=True,
+                     args=(pid, eid, spec, methodology, proj.get("name", "Reproduction Project"))).start()
 
 
 def get_exp(eid: str) -> tuple[str, dict, dict]:
@@ -270,6 +310,7 @@ def analyze(pid: str):
         "id": eid, "parent_id": None, "version": 1, "spec": spec, "diff_from_parent": [],
         "config_hash": versioning.config_hash(spec)}
     save(pid, proj)
+    warm_notebook_model(pid, eid, proj)
     return {"experiment_id": eid, "spec": spec, "findings": findings, "flags": paper["flags"]}
 
 
@@ -352,6 +393,7 @@ def analyze_stream(pid: str):
             "id": eid, "parent_id": None, "version": 1, "spec": spec, "diff_from_parent": [],
             "config_hash": versioning.config_hash(spec)}
         save(pid, proj)
+        warm_notebook_model(pid, eid, proj)
 
         yield f"data: {json.dumps({'stage': 'complete', 'pct': 100, 'message': 'Reproduction DAG synthesized successfully!', 'experiment_id': eid})}\n\n"
 
@@ -392,6 +434,7 @@ def edit_node(eid: str, node: str, edits: dict = Body(...)):
         "diff_from_parent": versioning.diff_specs(exp["spec"], child_spec),
         "config_hash": versioning.config_hash(child_spec)}
     save(pid, proj)
+    warm_notebook_model(pid, cid, proj)
     return proj["experiments"][cid]
 
 
@@ -634,19 +677,33 @@ def get_project_notebook(pid: str, experiment_id: str | None = None):
     exps = proj.get("experiments", {})
     if not exps:
         raise HTTPException(400, "Project has not been analyzed yet")
-    exp = exps[experiment_id] if experiment_id and experiment_id in exps else max(exps.values(), key=lambda e: e.get("version", 1))
+    eid = experiment_id if experiment_id in exps else max(exps, key=lambda k: exps[k].get("version", 1))
+    exp = exps[eid]
     is_paper_only = proj.get("is_paper_only", False)
     paper = proj.get("paper", {})
     methodology = paper.get("methodology")
+    repo_path = _p(pid) / "repo"
+    model_code = None
+    if _nb_needs_model(pid, proj):
+        cache = _nb_cache(pid, eid)
+        if cache.exists():
+            model_code = json.loads(cache.read_text())
+        else:
+            # Serve the template now; Gemini code will be ready for the next download.
+            model_code = architecture_builder.build_model_code_for_notebook(
+                exp.get("spec", {}), methodology, proj.get("name", ""), use_llm=False)
+            warm_notebook_model(pid, eid, proj)
     nb_dict = notebook_exporter.generate_notebook(
         exp.get("spec", {}),
         proj.get("name", "Reproduction Project"),
         repo_path=repo_path if (repo_path.exists() and not is_paper_only) else None,
         methodology=methodology,
         is_paper_only=is_paper_only,
+        model_code=model_code,
     )
     nb_json = json.dumps(nb_dict, indent=2)
-    filename = f"{proj.get('name', 'project').lower().replace(' ', '_')}_reproduction.ipynb"
+    slug = re.sub(r"[^a-z0-9]+", "_", proj.get("name", "project").lower()).strip("_") or "project"
+    filename = f"{slug}_reproduction.ipynb"
     return Response(
         content=nb_json,
         media_type="application/x-ipynb+json",

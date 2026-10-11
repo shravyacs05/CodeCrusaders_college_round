@@ -46,9 +46,12 @@ STRICT REQUIREMENTS:
 def build_model_code_for_notebook(
     spec: dict[str, Any],
     methodology: dict[str, Any] | None = None,
-    project_name: str = ""
+    project_name: str = "",
+    use_llm: bool = True,
 ) -> dict[str, Any]:
     """Generate executable model architecture code for Jupyter Notebook using Gemini with template fallback.
+
+    Pass use_llm=False to skip the (slow) Gemini call and return the template instantly.
 
     Returns:
         dict with keys:
@@ -65,7 +68,7 @@ def build_model_code_for_notebook(
     domain = meth.get("domain") or meth.get("canonical_domain") or "tabular"
 
     # Attempt Gemini generation if enabled
-    if llm.enabled():
+    if use_llm and llm.enabled():
         try:
             user_prompt = f"""Project / Paper: {project_name or 'Research Paper'}
 Published Claim: {claim.get('metric', 'accuracy').upper()} = {claim.get('value')}{'%' if claim.get('percent') else ''} (Quote: "{claim.get('quote', '')}")
