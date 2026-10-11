@@ -141,53 +141,10 @@ export default function Dashboard({ initialTab = 'projects' }: DashboardProps) {
         </div>
       )}
 
-<<<<<<< HEAD
-  {/* Render Leaderboard or Projects List exclusively */ }
-  {
-    isLeaderboard ? (
-      <LeaderboardView />
-    ) : (
-
-=======
-      {/* Main View Tab Switcher: Macro Leaderboard vs Projects Grid */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl">
-          <button
-            onClick={() => setMainTab('leaderboard')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${mainTab === 'leaderboard'
-                ? 'bg-white text-brand-700 shadow-sm border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900'
-              }`}
-          >
-            <Trophy className="w-4 h-4 text-brand-600" />
-            <span>Macro Reproducibility Leaderboard</span>
-          </button>
-
-          <button
-            onClick={() => setMainTab('projects')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${mainTab === 'projects'
-                ? 'bg-white text-brand-700 shadow-sm border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900'
-              }`}
-          >
-            <FolderKanban className="w-4 h-4 text-brand-600" />
-            <span>All Projects ({projects?.length ?? '...'})</span>
-          </button>
-        </div>
-
-        {mainTab === 'projects' && (
-          <span className="text-xs font-semibold text-slate-500 hidden sm:block">
-            {filtered ? `${filtered.length} project${filtered.length === 1 ? '' : 's'}` : ''}
-          </span>
-        )}
-      </div>
-
-      {/* Tab 1: Macro Leaderboard & Scatter Plot */}
-      {mainTab === 'leaderboard' && <LeaderboardView />}
-
-      {/* Tab 2: Projects List with Search */}
-      {mainTab === 'projects' && (
->>>>>>> b78d964628949c404b09a275171613e19c293bf3
+      {/* Render Leaderboard or Projects List exclusively */}
+      {isLeaderboard ? (
+        <LeaderboardView />
+      ) : (
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="relative flex-1 max-w-sm">
@@ -269,8 +226,7 @@ export default function Dashboard({ initialTab = 'projects' }: DashboardProps) {
           </div>
         )}
       </div>
-    )
-  }
-    </div >
-  )
+    )}
+  </div>
+)
 }
