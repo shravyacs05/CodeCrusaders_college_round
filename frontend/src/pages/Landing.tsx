@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   Sparkles,
   ArrowRight,
@@ -20,6 +20,7 @@ import {
 import { api } from '../api/client'
 
 export default function Landing() {
+  const location = useLocation()
   const [projects, setProjects] = useState<any[] | null>(null)
   const [docker, setDocker] = useState<boolean | null>(null)
   const [activeFaq, setActiveFaq] = useState<number | null>(null)
@@ -28,6 +29,32 @@ export default function Landing() {
     api.projects().then(setProjects).catch(() => setProjects([]))
     api.health().then(h => setDocker(h.docker)).catch(() => setDocker(false))
   }, [])
+
+  // Dynamic FAQ scroll & expand listener
+  useEffect(() => {
+    const handleScrollToFaq = (indexToOpen = 0) => {
+      const hash = window.location.hash
+      if (hash === '#faq' || window.location.search.includes('faq')) {
+        setTimeout(() => {
+          const el = document.getElementById('faq')
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' })
+            setActiveFaq(indexToOpen)
+          }
+        }, 150)
+      }
+    }
+
+    handleScrollToFaq()
+    window.addEventListener('hashchange', () => handleScrollToFaq(0))
+    const onFocusFaq = (e: any) => handleScrollToFaq(e.detail?.openIndex ?? 0)
+    window.addEventListener('focus-faq', onFocusFaq)
+
+    return () => {
+      window.removeEventListener('hashchange', () => handleScrollToFaq(0))
+      window.removeEventListener('focus-faq', onFocusFaq)
+    }
+  }, [location])
 
   const demo1 = projects?.find(p => p.name?.includes('Demo 1') || p.name?.includes('Random Forest'))
   const demo2 = projects?.find(p => p.name?.includes('Demo 2') || p.name?.includes('SGD'))
@@ -403,7 +430,7 @@ export default function Landing() {
       {/* ============================================================ */}
       {/* SYSTEM FAQ SECTION                                           */}
       {/* ============================================================ */}
-      <section id="faq" className="py-20 bg-slate-50 border-t border-slate-200">
+      <section id="faq" className="scroll-mt-24 py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="text-xs font-bold text-brand-600 uppercase tracking-wider bg-blue-50 border border-brand-200 px-3 py-1 rounded-full">
@@ -422,11 +449,11 @@ export default function Landing() {
               >
                 <button
                   onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                  className="w-full text-left px-6 py-4 flex items-center justify-between text-sm sm:text-base font-semibold text-slate-900 hover:text-brand-600 transition-colors"
+                  className="w-full text-left px-6 py-4 flex items-center justify-between text-sm sm:text-base font-semibold text-slate-900 hover:text-brand-600 transition-colors cursor-pointer"
                 >
                   <span>{faq.q}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-slate-400 transition-transform duration-200 shrink-0 ml-4 ${
                       activeFaq === idx ? 'rotate-180 text-brand-600' : ''
                     }`}
                   />
@@ -453,8 +480,20 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-6">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
-            <Link to="/dashboard" className="hover:text-white transition-colors">Projects</Link>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+            <Link to="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>
+            <Link to="/projects" className="hover:text-white transition-colors">Projects</Link>
+            <button
+              onClick={() => {
+                const el = document.getElementById('faq')
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth' })
+                  setActiveFaq(0)
+                }
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              FAQ
+            </button>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />

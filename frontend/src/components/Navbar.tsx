@@ -1,8 +1,23 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Sparkles, Plus, FolderKanban, Trophy } from 'lucide-react'
 
 export default function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleFaqClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (location.pathname === '/') {
+      const el = document.getElementById('faq')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+        window.history.pushState(null, '', '#faq')
+        window.dispatchEvent(new CustomEvent('focus-faq', { detail: { openIndex: 0 } }))
+      }
+    } else {
+      navigate('/#faq')
+    }
+  }
 
   return (
     <header className="sticky top-0 z-[100] backdrop-blur-2xl bg-navy-950/90 border-b border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all">
@@ -53,9 +68,9 @@ export default function Navbar() {
             <span>Leaderboard</span>
           </Link>
           <Link
-            to="/dashboard"
+            to="/projects"
             className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-              location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/p/')
+              location.pathname.startsWith('/projects') || location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/p/')
                 ? 'text-white bg-brand-500/80 shadow-glow'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
@@ -63,12 +78,13 @@ export default function Navbar() {
             <FolderKanban className="w-3.5 h-3.5 text-brand-300" />
             <span>Projects</span>
           </Link>
-          <a
-            href="/#faq"
-            className="px-4 py-2 rounded-full text-xs font-extrabold text-slate-300 hover:text-white hover:bg-white/10 transition-all hidden sm:inline-block"
+
+          <button
+            onClick={handleFaqClick}
+            className="px-4 py-2 rounded-full text-xs font-extrabold text-slate-300 hover:text-white hover:bg-white/10 transition-all hidden sm:inline-block cursor-pointer"
           >
             FAQ
-          </a>
+          </button>
         </nav>
 
         {/* Right CTA Button */}
