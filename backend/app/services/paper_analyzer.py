@@ -612,6 +612,97 @@ def extract_model_references(pages: list[str]) -> dict[str, Any]:
     return {"hub_ids": hub_ids[:10], "external_links": links[:10]}
 
 
+_CELL_NUM = re.compile(r"^\d{1,3}(?:\.\d+)?%?$")
+
+
+def _key(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def repo_claim_hints(repo_path) -> set[str]:
+    """Benchmark/model names the repo talks about (SST-2, DistilBERT, CIFAR-10...): tokens with a capital
+    letter or digit from the README and the docstrings/comments of top-level scripts."""
+    from pathlib import Path
+
+    repo_path = Path(repo_path)
+    texts = [f.read_text(encoding="utf-8", errors="ignore") for f in repo_path.glob("README*") if f.is_file()]
+    for f in repo_path.glob("*.py"):
+        src = f.read_text(encoding="utf-8", errors="ignore")
+        texts += re.findall(r'"""(.*?)"""', src, re.S) + re.findall(r"#(.*)", src)
+    hints = set()
+    for t in texts:
+        for tok in re.findall(r"[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9]", t):
+            if (re.search(r"[A-Z]", tok[1:]) or re.search(r"\d", tok)) and len(_key(tok)) >= 3:
+                hints.add(tok)
+    return hints
+
+
+def extract_table_claim(pdf_path: str, hints: set[str], max_gap: float = 80.0) -> dict[str, Any] | None:
+    """Read a claim out of a results table (no ruling lines needed) using word positions.
+
+    A cell is accepted when its column header AND its row label both match names the repo itself
+    uses (e.g. column 'SST-2', row 'DistilBERT'). Returns None unless exactly one such cell exists,
+    so an ambiguous table never produces a guessed claim."""
+    import pymupdf
+
+    keys = {_key(h) for h in hints}
+    found: dict[tuple, dict] = {}
+    with pymupdf.open(pdf_path) as doc:
+        for pno, page in enumerate(doc):
+            words = page.get_text("words")
+            nums = [w for w in words if _CELL_NUM.match(w[4])]
+            named = [w for w in words if _key(w[4]) in keys and not _CELL_NUM.match(w[4])]
+            for col in named:
+                below = [n for n in nums if n[1] > col[3] and n[1] - col[3] < max_gap
+                         and n[0] < col[2] + 4 and n[2] > col[0] - 4]
+                # a column header sits directly on top of a column of numbers (captions/prose do not)
+                if len(below) < 2 or min(n[1] for n in below) - col[3] > 12:
+                    continue
+                for row in named:
+                    ry = (row[1] + row[3]) / 2
+                    line = [n for n in nums if abs((n[1] + n[3]) / 2 - ry) < 3 and n[0] > row[2]]
+                    if _key(row[4]) == _key(col[4]) or len(line) < 2 or not (0 < row[1] - col[3] < max_gap):
+                        continue
+                    cells = [n for n in line if n in below]
+                    if len(cells) != 1:
+                        continue
+                    c = cells[0]
+                    w, h = page.rect.width, page.rect.height
+                    found.setdefault((pno, tuple(round(x) for x in c[:4])), {
+                        "metric": "accuracy", "value": _num(c[4].rstrip("%")), "page": pno + 1,
+                        "quote": f"Table: {row[4]} {col[4]} {c[4]}", "match": c[4], "percent": True,
+                        "source": "table", "row": row[4], "column": col[4], "verified": True,
+                        "bbox": {"x": round(c[0] / w * 100, 2), "y": round(c[1] / h * 100, 2),
+                                 "w": max(round((c[2] - c[0]) / w * 100, 2), 3.0),
+                                 "h": max(round((c[3] - c[1]) / h * 100, 2), 1.4)}})
+    if len(found) != 1:
+        return None
+    claim = next(iter(found.values()))
+    if claim["value"] is not None and claim["value"] <= 1.0:
+        claim["percent"] = False
+    return claim
+
+
+def apply_repo_table_claim(paper: dict[str, Any], pdf_path: str, repo_path) -> dict[str, Any] | None:
+    """If the claim is missing, or is not about the task the repo evaluates, use the one table cell
+    that matches the repo's benchmark and model names."""
+    hints = repo_claim_hints(repo_path)
+    if not hints:
+        return None
+    current = paper["fields"].get("_claim") or {}
+    table = extract_table_claim(pdf_path, hints)
+    if not table:
+        return None
+    if current.get("value") == table["value"] or (
+            current.get("value") is not None and _key(table["column"]) in _key(current.get("quote") or "")):
+        return None  # the extracted claim already concerns the benchmark the repo evaluates
+    if table:
+        if current.get("value") is not None:
+            table["replaced"] = {"value": current["value"], "quote": current.get("quote")}
+        paper["fields"]["_claim"] = table
+    return table
+
+
 def get_paper_metadata(pdf_path: str) -> dict[str, Any]:
     """Return page count, dimensions for each page, and any discovered repo URL."""
     import pymupdf

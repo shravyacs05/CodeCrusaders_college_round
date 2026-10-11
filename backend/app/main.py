@@ -306,6 +306,8 @@ def analyze(pid: str):
             proj["is_paper_only"] = True
 
     scan = repo_scanner.scan_repo(repo_path)
+    if not is_paper_only:  # claim only in a results table: read the cell matching the repo's benchmark/model
+        paper_analyzer.apply_repo_table_claim(paper, proj["paper_path"], repo_path)
     if proj.get("auto_detected_repo"):
         scan.setdefault("warnings", []).append(
             f"✨ Auto-Detected Repository: Extracted {proj['repo_url']} directly from paper text/footnote."
@@ -388,6 +390,11 @@ def analyze_stream(pid: str):
                 proj["is_paper_only"] = True
 
         scan = repo_scanner.scan_repo(repo_path)
+        if not is_paper_only:
+            tc = paper_analyzer.apply_repo_table_claim(paper, paper_path, repo_path)
+            if tc:
+                msg = f"Claim read from results table (p.{tc['page']}): {tc['row']} / {tc['column']} = {tc['value']}"
+                yield f"data: {json.dumps({'stage': 'claims', 'pct': 82, 'message': msg})}\n\n"
         if proj.get("auto_detected_repo"):
             scan.setdefault("warnings", []).append(
                 f"✨ Auto-Detected Repository: Extracted {proj['repo_url']} directly from paper text/footnote."

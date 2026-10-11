@@ -220,3 +220,26 @@ def test_report_renders_checkpoint_section():
     assert any(r["item"].startswith("Integrity: 2/2") for r in ledger)
     assert report.checkpoint_view(cm.plan_checkpoint(_missing_weights(), hub=FakeHub({})), None)["verdict"] \
         == "NOT FOUND (no substitute used)"
+
+
+def test_claim_read_from_results_table_using_repo_names(tmp_path):
+    """Claims that only exist in a table (like DistilBERT's Table 1) are read from the cell whose row and
+    column match names the repo uses; captions and prose that mention the same names are ignored."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Table
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    from app.services.paper_analyzer import extract_table_claim, repo_claim_hints
+
+    pdf = tmp_path / "p.pdf"
+    ss = getSampleStyleSheet()
+    SimpleDocTemplate(str(pdf), pagesize=A4).build([
+        Paragraph("Table 1: DistilBERT retains 97% of BERT performance on SST-2.", ss["Normal"]),
+        Table([["Model", "CoLA", "SST-2", "STS-B"], ["BERT-base", "56.3", "92.7", "89.0"],
+               ["DistilBERT", "51.3", "91.3", "86.9"]])])
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "README.md").write_text("Reproduces DistilBERT accuracy on SST-2.")
+    claim = extract_table_claim(str(pdf), repo_claim_hints(repo))
+    assert claim["value"] == 91.3 and claim["row"] == "DistilBERT" and claim["column"] == "SST-2"
+    assert extract_table_claim(str(pdf), {"DistilBERT", "MNLI"}) is None   # column not in table: no guess

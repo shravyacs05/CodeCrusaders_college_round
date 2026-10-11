@@ -492,6 +492,7 @@ EXTERNAL_WEIGHT_RE = re.compile(
     re.IGNORECASE)
 TRAINING_RE = re.compile(r"\.backward\(|optimizer\.step\(|\bTrainer\(|\.fit\(|trainer\.train\(")
 SKIP_DIRS = {"venv", ".venv", "env", "node_modules", "site-packages", ".git", "__pycache__", ".ipynb_checkpoints"}
+SOURCE_SKIP_DIRS = SKIP_DIRS | {"tests", "test", "docs", "doc", "benchmark", "benchmarks"}
 
 
 def is_lfs_pointer(path: Path) -> bool:
@@ -674,7 +675,7 @@ def _iter_sources(repo_path: Path):
     """Yield (rel_path, source_code) for .py files and notebook code cells."""
     for f in sorted(repo_path.rglob("*.py")):
         rel = f.relative_to(repo_path)
-        if any(part in SKIP_DIRS or part.startswith(".") for part in rel.parts):
+        if any(part in SOURCE_SKIP_DIRS or part.startswith(".") for part in rel.parts):
             continue
         yield rel.as_posix(), f.read_text(encoding="utf-8", errors="ignore")
     for nb in sorted(repo_path.rglob("*.ipynb")):

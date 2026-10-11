@@ -34,6 +34,7 @@ WEIGHT_GROUPS = [
     re.compile(r"^tf_model\.h5$"),
     re.compile(r"^flax_model\.msgpack$"),
 ]
+MAX_HUB_LOOKUPS = 12  # a single experiment references a handful of models; a library references hundreds
 SOURCE_LABEL = {"paper": "paper", "readme": "README", "config": "config file", "code": "code"}
 
 
@@ -134,6 +135,7 @@ def plan_checkpoint(weights: dict | None, paper_refs: dict | None = None, paper_
         "candidates": [], "selected": [],
         "external_links": weights.get("external_links", []) + (paper_refs or {}).get("external_links", []),
         "resolved_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "notes": [],
     }
     if wstatus in ("not_required", "present"):
         return plan
@@ -160,10 +162,16 @@ def plan_checkpoint(weights: dict | None, paper_refs: dict | None = None, paper_
         if h.get("verified"):  # an unverifiable quote is not evidence
             add(h["repo_id"], h.get("revision"), "paper", h["kind"], f"p.{h['page']}: {h['quote']}")
 
-    # 2. Confirm each candidate on the Hub
+    # 2. Confirm candidates on the Hub: paper/README/config links first, then the most-used code refs
+    ordered = sorted(cands.values(), key=lambda c: (all(e["source"] == "code" for e in c["evidence"]),
+                                                    -len(c["code_refs"])))
+    if len(ordered) > MAX_HUB_LOOKUPS:
+        plan["notes"].append(
+            f"The repository references {len(ordered)} different Hub models, which looks like a library rather "
+            f"than a single experiment; only the {MAX_HUB_LOOKUPS} most relevant were checked.")
     offline = False
     resolved: dict[str, dict] = {}
-    for c in cands.values():
+    for c in ordered[:MAX_HUB_LOOKUPS]:
         try:
             info = hub.model_info(c["requested_id"], revision=c["revision_hint"])
         except HubError as e:
@@ -259,6 +267,8 @@ def plan_checkpoint(weights: dict | None, paper_refs: dict | None = None, paper_
     # 3b. Hub models the code loads directly: pin them so every run uses the same bytes
     pinned_ok = True
     for c in resolved.values():
+        if len([s for s in plan["selected"] if s["role"] == "pinned_hub_reference"]) >= 3:
+            break
         if c["code_refs"] and not any(s["repo_id"] == c.get("repo_id") for s in plan["selected"]):
             if c.get("rejected") and not c["rejected"].startswith("head mismatch"):
                 pinned_ok = False
@@ -270,7 +280,7 @@ def plan_checkpoint(weights: dict | None, paper_refs: dict | None = None, paper_
                          size_bytes=sum(c["file_meta"][k]["size"] or 0 for k in c["aux_files"]))
             plan["selected"].append(e)
     if wstatus == "hub_reference":
-        missing_hub = [c for c in cands.values() if c["code_refs"] and c.get("rejected")]
+        missing_hub = [c for c in ordered[:MAX_HUB_LOOKUPS] if c["code_refs"] and c.get("rejected")]
         plan["status"] = ("hub_unreachable" if offline else "not_found") if missing_hub or not pinned_ok else "pinned"
     return plan
 
@@ -309,6 +319,7 @@ def plan_warnings(plan: dict | None) -> list[str]:
     reason = blocking_reason(plan)
     if reason:
         out.append(f"⛔ {reason}")
+    out += [f"⚠ {n}" for n in plan.get("notes", [])]
     rejected = [c for c in plan.get("candidates", []) if c.get("rejected")]
     if rejected:
         out.append("Rejected checkpoint candidates: " + "; ".join(

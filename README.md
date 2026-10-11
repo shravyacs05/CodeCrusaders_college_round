@@ -93,7 +93,13 @@ CrisisGrid includes two complete synthetic fixtures to demonstrate all features:
    - CrisisGrid detects the missing weights, identifies `distilbert/distilbert-base-uncased-finetuned-sst-2-english`
      from the README and paper, pins its commit, downloads it, verifies every file hash, loads it, runs the
      evaluation and compares the measured accuracy with the paper.
-   - Terminal walkthrough: `python scripts/checkpoint_demo.py` (add `--no-llm` for deterministic extraction).
+   - Works with the **real paper PDF** (https://arxiv.org/pdf/1910.01108): the 91.3 lives only in Table 1, and
+     CrisisGrid reads the one cell whose row and column match the repo's own names (`DistilBERT` × `SST-2`).
+     `fixtures/demo_paper_checkpoint.pdf` is a one-page brief of the same result, kept for offline tests.
+   - In the app: upload the paper and **always fill in the repository box** with the fixture path (or its GitHub
+     URL). Left empty, CrisisGrid auto-detects `github.com/huggingface/transformers` from the paper's footnote.
+   - Terminal walkthrough: `python scripts/checkpoint_demo.py --paper 1910.01108v4.pdf` (add `--no-llm` for
+     deterministic extraction). First run installs CPU torch + transformers and downloads 268 MB (~4 min).
 
 To regenerate the fixture PDFs:
 ```bash

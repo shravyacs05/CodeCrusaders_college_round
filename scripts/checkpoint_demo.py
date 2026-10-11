@@ -83,6 +83,7 @@ def main() -> int:
     step(3, "Identify the intended checkpoint (paper + README + code -> Hub)")
     paper = paper_analyzer.analyze_paper(str(paper_path))
     pages = paper_analyzer.extract_pages(str(paper_path))
+    paper_analyzer.apply_repo_table_claim(paper, str(paper_path), repo_path)
     claim = paper["fields"]["_claim"]
     print(f"paper claim: {claim['metric']} = {claim['value']}  {DIM}(p.{claim['page']}: \"{claim['quote']}\"){END}")
     for h in paper["model_refs"]["hub_ids"]:
