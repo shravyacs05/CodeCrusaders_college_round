@@ -298,3 +298,27 @@ def test_notebook_scanner(tmp_path):
     assert len(cands) >= 1
     assert any(c["name"] in ("learning_rate", "seed") for c in cands)
 
+
+def test_notebook_exporter_includes_model_code(tmp_path):
+    from app.services.notebook_exporter import generate_notebook
+
+    spec = {
+        "claim": {"metric": "accuracy", "value": 96.5, "quote": "Achieves 96.5% accuracy", "page": 4},
+        "params": {"lr": {"value": 0.001, "source": "paper"}}
+    }
+    # 1. Fallback synthesis
+    nb = generate_notebook(spec, "Test Project")
+    assert nb["nbformat"] == 4
+    code_cells = [c for c in nb["cells"] if c["cell_type"] == "code"]
+    assert any("MLPClassifier" in "".join(c["source"]) for c in code_cells)
+
+    # 2. Embedding train.py from repo_path
+    repo_dir = tmp_path / "repo"
+    repo_dir.mkdir()
+    (repo_dir / "train.py").write_text("print('Custom model code executed!')\n")
+
+    nb_repo = generate_notebook(spec, "Test Project", repo_path=repo_dir)
+    code_cells_repo = [c for c in nb_repo["cells"] if c["cell_type"] == "code"]
+    assert any("Custom model code executed!" in "".join(c["source"]) for c in code_cells_repo)
+
+

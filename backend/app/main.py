@@ -464,7 +464,12 @@ def get_project_notebook(pid: str, experiment_id: str | None = None):
     if not exps:
         raise HTTPException(400, "Project has not been analyzed yet")
     exp = exps[experiment_id] if experiment_id and experiment_id in exps else max(exps.values(), key=lambda e: e.get("version", 1))
-    nb_dict = notebook_exporter.generate_notebook(exp.get("spec", {}), proj.get("name", "Reproduction Project"))
+    repo_path = _p(pid) / "repo"
+    nb_dict = notebook_exporter.generate_notebook(
+        exp.get("spec", {}),
+        proj.get("name", "Reproduction Project"),
+        repo_path=repo_path if repo_path.exists() else None
+    )
     nb_json = json.dumps(nb_dict, indent=2)
     filename = f"{proj.get('name', 'project').lower().replace(' ', '_')}_reproduction.ipynb"
     return Response(
