@@ -12,10 +12,78 @@ def render_report(ctx: dict[str, Any]) -> str:
     return env.get_template("report.html.j2").render(**ctx)
 
 
-def evidence_ledger(findings: list[dict], verification: dict | None) -> list[dict]:
+CHECKPOINT_VERDICTS = {
+    "recovered": "RECOVERED & VERIFIED",
+    "identified": "IDENTIFIED (not downloaded yet)",
+    "pinned": "PINNED",
+    "present": "PRESENT IN REPOSITORY",
+    "failed": "RECOVERY FAILED",
+    "not_found": "NOT FOUND (no substitute used)",
+    "ambiguous": "AMBIGUOUS (no substitute used)",
+    "candidate_unconfirmed": "UNCONFIRMED (no substitute used)",
+    "hub_unreachable": "UNVERIFIED (Hub unreachable)",
+    "error": "ERROR",
+}
+
+
+def checkpoint_view(plan: dict | None, record: dict | None = None) -> dict | None:
+    """Merge the analysis-time plan with the run-time download/verification record for display."""
+    if not plan or plan.get("weights_status") in (None, "not_required"):
+        return None
+    rec_by_id = {e["repo_id"]: e for e in (record or {}).get("entries", [])}
+    entries = []
+    for sel in plan.get("selected", []):
+        r = rec_by_id.get(sel["repo_id"], {})
+        integ, load = r.get("integrity"), r.get("load_check")
+        entries.append({**sel, "downloaded": bool(r), "path": r.get("path"), "integrity": integ,
+                        "load_check": load, "placed": r.get("placed", []), "unmapped": r.get("unmapped", []),
+                        "verified": bool(integ and integ.get("ok") and load and load.get("ok") is not False)})
+    status = plan.get("status")
+    if record and record.get("error"):
+        key = "failed"
+    elif status in ("identified", "pinned") and entries and all(e["verified"] for e in entries):
+        key = "recovered" if status == "identified" else "pinned"
+    else:
+        key = status
+    return {"status": status, "verdict": CHECKPOINT_VERDICTS.get(key, str(key).upper()), "verdict_key": key,
+            "weights_status": plan.get("weights_status"), "missing": plan.get("missing", []),
+            "entries": entries, "external_links": plan.get("external_links", []),
+            "rejected": [c for c in plan.get("candidates", []) if c.get("rejected") or c.get("role_note")],
+            "error": (record or {}).get("error"), "resolved_at": plan.get("resolved_at")}
+
+
+def evidence_ledger(findings: list[dict], verification: dict | None, checkpoint: dict | None = None) -> list[dict]:
     rows = [{"item": f"{f['param']}: {f['status']}",
              "evidence": f"paper={f.get('paper_ref') or '-'} | code={f.get('code_ref') or '-'}",
              "type": "paper+code"} for f in findings]
+    if checkpoint:
+        for m in checkpoint["missing"]:
+            rows.append({"item": f"Weights missing from repo: {m.get('value') or '--' + str(m.get('flag'))}",
+                         "evidence": f"{m['file']}:{m['line']} {m['loader']}", "type": "code"})
+        for e in checkpoint["entries"]:
+            rows.append({"item": f"Checkpoint {e['repo_id']} @ {e['sha'][:12]} ({e['role'].replace('_', ' ')})",
+                         "evidence": "; ".join(f"{x['source']}: {x['ref']}" for x in e["evidence"]),
+                         "type": "paper+code+hub"})
+            if e.get("integrity"):
+                i = e["integrity"]
+                rows.append({"item": f"Integrity: {i['n_verified']}/{i['n_files']} files match Hub hashes",
+                             "evidence": ", ".join(f"{f['name']} ({f['algo']})" for f in i["files"][:6]),
+                             "type": "measured"})
+            lc = e.get("load_check") or {}
+            if lc.get("ok"):
+                n = f", {lc['n_params'] / 1e6:.1f}M params" if lc.get("n_params") else ""
+                rows.append({"item": f"Load check: {lc.get('class')}{n}", "evidence": lc.get("library", ""),
+                             "type": "measured"})
+            for r in e.get("eval_results", [])[:2]:
+                rows.append({"item": f"Model card reports {r['metric']} = {r['value']:.4f} on "
+                                     f"{r['dataset']}/{r.get('config') or ''} {r.get('split') or ''}",
+                             "evidence": f"Hub model-index{' (Hub-verified)' if r.get('verified') else ''}",
+                             "type": "self-reported"})
+        if not checkpoint["entries"] and checkpoint["missing"]:
+            rows.append({"item": f"Checkpoint: {checkpoint['verdict']}",
+                         "evidence": "; ".join(f"{c.get('repo_id') or c.get('requested_id')}: {c.get('rejected') or c.get('role_note')}"
+                                               for c in checkpoint["rejected"]) or "no checkpoint referenced",
+                         "type": "calculated"})
     if verification and verification.get("status") != "BLOCKED":
         v_mean = verification.get("reproduced_mean", 0.0)
         rows.append({"item": f"Reproduced mean {v_mean:.2f}%",
@@ -83,6 +151,31 @@ def render_pdf(ctx: dict[str, Any], out_path: Path) -> Path:
     ]))
     story.append(t)
     story.append(Spacer(1, 12))
+
+    # 2b. Model checkpoint
+    ck = ctx.get("checkpoint")
+    if ck:
+        story.append(Paragraph("Model Checkpoint", styles["Heading2"]))
+        story.append(Paragraph(f"Status: <b>{ck['verdict']}</b>", styles["Normal"]))
+        for m in ck["missing"]:
+            story.append(Paragraph(f"Missing from repository: {m.get('value') or '--' + str(m.get('flag'))} "
+                                   f"({m['file']}:{m['line']}, {m['loader']})", styles["Normal"]))
+        for e in ck["entries"]:
+            story.append(Paragraph(f"Checkpoint: <b>{e['repo_id']}</b> @ {e['sha']} ({e['revision_source']})",
+                                   styles["Normal"]))
+            story.append(Paragraph("Evidence: " + "; ".join(f"{x['source']}: {x['ref']}" for x in e["evidence"])[:400],
+                                   styles["Normal"]))
+            if e.get("integrity"):
+                story.append(Paragraph(f"Integrity: {e['integrity']['n_verified']}/{e['integrity']['n_files']} files "
+                                       "match the Hub's SHA-256 / git hashes", styles["Normal"]))
+            lc = e.get("load_check") or {}
+            if lc:
+                story.append(Paragraph(f"Load check: {'OK ' + str(lc.get('class')) if lc.get('ok') else lc.get('skipped') or lc.get('error')}",
+                                       styles["Normal"]))
+        for c in ck["rejected"]:
+            story.append(Paragraph(f"Rejected: {c.get('repo_id') or c.get('requested_id')}: {c.get('rejected') or c.get('role_note')}",
+                                   styles["Normal"]))
+        story.append(Spacer(1, 12))
 
     # 3. Verification Results
     ver = ctx.get("verification", {})

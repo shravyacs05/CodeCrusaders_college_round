@@ -5,6 +5,7 @@ otherwise a subprocess with a timeout labelled 'reduced isolation'.
 Fallback runs in a fresh virtualenv (created once per project in setup_env).
 """
 import json
+import os
 import platform
 import shutil
 import subprocess
@@ -110,10 +111,28 @@ def setup_env(repo_path: Path, work_dir: Path, use_docker: bool,
         return {"ok": False, "python": None, "log": str(log), "error": str(e)}
 
 
+def prepare_checkpoint(spec: dict[str, Any], scan: dict[str, Any] | None, project_dir: Path,
+                       repo_path: Path, python: str | None, use_docker: bool,
+                       on_event: Callable[[str, str], None]) -> dict[str, Any] | None:
+    """Checkpoint stage (network allowed, after setup_env): download the checkpoint the plan
+    identified, verify every file against the Hub's hashes, load it with its own library inside the
+    experiment's environment, then wire it into the run (flag / placed files / pinned Hub cache)."""
+    from . import checkpoint_manager
+
+    plan = spec.get("checkpoint")
+    if not plan or plan.get("status") not in ("identified", "pinned"):
+        return None
+    return checkpoint_manager.prepare(
+        plan, project_dir, repo_path, spec.get("run_command_template") or "", python, use_docker,
+        uses_hub_assets=bool(((scan or {}).get("weights") or {}).get("uses_hub_assets")), on_event=on_event)
+
+
 def render_command(template: str, spec: dict[str, Any], seed: int, out: str,
-                   python: str | None = None) -> list[str]:
-    """Fill the run template; missing values are omitted so the code default is used."""
+                   python: str | None = None, overrides: dict[str, Any] | None = None) -> list[str]:
+    """Fill the run template; missing values are omitted so the code default is used.
+    `overrides` supplies values CrisisGrid provides itself, e.g. a recovered checkpoint path."""
     values = {k: v["value"] for k, v in spec["params"].items()}
+    values.update(overrides or {})
     values["seed"] = seed
     values["out"] = out
     tokens = template.split()
@@ -135,29 +154,42 @@ def render_command(template: str, spec: dict[str, Any], seed: int, out: str,
 
 def run_seed(repo_path: Path, spec: dict, seed: int, out_dir: Path, experiment_id: str,
              parent_id: str | None, commit: str, use_docker: bool,
-             on_event: Callable[[str, str], None], python: str | None = None) -> dict[str, Any]:
+             on_event: Callable[[str, str], None], python: str | None = None,
+             checkpoint: dict[str, Any] | None = None) -> dict[str, Any]:
+    """`checkpoint` is the record from checkpoint_manager.prepare(): env vars, flag overrides and
+    (Docker) the pinned cache to mount read-only at /ckpt."""
     out_dir.mkdir(parents=True, exist_ok=True)
+    ckpt = checkpoint or {}
+    overrides = ckpt.get("overrides") or {}
+    ckpt_env = ckpt.get("env") or {}
     out_file = out_dir / f"metrics_seed{seed}.json"
     log_file = out_dir / f"log_seed{seed}.txt"
     isolation = "docker" if use_docker else "reduced isolation"
     started = time.time()
     on_event("Training", "running")
     if use_docker:
-        cmd = render_command(spec["run_command_template"], spec, seed, f"/out/{out_file.name}")
+        cmd = render_command(spec["run_command_template"], spec, seed, f"/out/{out_file.name}",
+                             overrides=overrides)
         cmd[0] = "python"
+        extra = []
+        if ckpt.get("mount"):
+            extra += ["-v", f"{ckpt['mount']}:/ckpt:ro"]
+        for k, v in ckpt_env.items():
+            extra += ["-e", f"{k}={v}"]
         docker_cmd = ["docker", "run", "--rm", "--network", "none", "--memory", "2g",
                       "--cpus", "2", "--user", "1000:1000",
                       "-v", f"{repo_path.resolve()}:/code:ro",
                       "-v", f"{out_dir.resolve()}:/out",
                       "-v", f"{(out_dir.parent / 'deps').resolve()}:/deps:ro",
-                      "-e", "PYTHONPATH=/deps", "-w", "/code",
-                      DOCKER_IMAGE] + cmd
+                      "-e", "PYTHONPATH=/deps", "-w", "/code"] + extra + [DOCKER_IMAGE] + cmd
         full = docker_cmd
     else:
-        full = render_command(spec["run_command_template"], spec, seed, str(out_file), python)
+        full = render_command(spec["run_command_template"], spec, seed, str(out_file), python,
+                              overrides=overrides)
     try:
         proc = subprocess.run(full, cwd=None if use_docker else repo_path, capture_output=True,
-                              text=True, timeout=RUN_TIMEOUT_S)
+                              text=True, timeout=RUN_TIMEOUT_S,
+                              env=None if use_docker or not ckpt_env else {**os.environ, **ckpt_env})
         log_file.write_text(proc.stdout + "\n--- stderr ---\n" + proc.stderr)
         exit_status = proc.returncode
     except subprocess.TimeoutExpired:
@@ -179,5 +211,6 @@ def run_seed(repo_path: Path, spec: dict, seed: int, out_dir: Path, experiment_i
             "config_hash": config_hash(spec), "seed": seed, "isolation": isolation,
             "python": platform.python_version(), "command": " ".join(full),
             "started_at": started, "ended_at": time.time(), "exit_status": exit_status,
+            "checkpoints": [{"repo_id": e["repo_id"], "sha": e["sha"]} for e in ckpt.get("entries", [])],
         },
     }

@@ -60,7 +60,23 @@ def build_spec(paper: dict[str, Any], scan: dict[str, Any]) -> dict[str, Any]:
         "run_command_template": scan["run_template"],
         "blocked": scan["blocked"],
         "warnings": scan.get("warnings", []),
+        "checkpoint": scan.get("checkpoint"),
     }
+
+
+def checkpoint_item(ck: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Graph entry for the model weights: where they come from, or that they are missing."""
+    if not ck or ck.get("weights_status") in (None, "not_required"):
+        return None
+    sel = next((s for s in ck.get("selected", []) if s["role"] == "recovered_missing"), None) \
+        or next(iter(ck.get("selected", [])), None)
+    if sel:
+        ev = "; ".join(f"{e['source']}: {e['ref']}" for e in sel["evidence"][:3])
+        return tracked(f"{sel['repo_id']}@{sel['sha'][:7]}", "hub", ev, verified=True, kind=sel["role"])
+    if ck.get("weights_status") == "present":
+        return tracked("in repository", "code", None, verified=True, kind="present")
+    m = (ck.get("missing") or [{}])[0]
+    return tracked(None, "missing", f"{m.get('file')}:{m.get('line')} {ck.get('status')}", kind="missing")
 
 
 def build_graph(spec: dict[str, Any]) -> dict[str, Any]:
@@ -68,6 +84,8 @@ def build_graph(spec: dict[str, Any]) -> dict[str, Any]:
     for n in ORDER:
         if n in PARAM_NODES:
             items = {p: spec["params"][p] for p in params_for_node(spec, n) if p in spec["params"]}
+            if n == "Model" and checkpoint_item(spec.get("checkpoint")):
+                items["checkpoint"] = checkpoint_item(spec.get("checkpoint"))
         elif n == "Evaluation":
             items = {"metric": tracked(spec["claim"]["metric"], "paper", spec["claim"]["ref"])}
         elif n == "Compare":

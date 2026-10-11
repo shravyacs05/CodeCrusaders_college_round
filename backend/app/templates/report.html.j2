@@ -4,7 +4,8 @@
 body{font-family:system-ui,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#222}
 table{border-collapse:collapse;width:100%;margin:.5rem 0}td,th{border:1px solid #ccc;padding:6px;text-align:left;font-size:14px}
 th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px solid #e0a800}
-.tag{padding:2px 6px;border-radius:4px;background:#eee}
+.tag{padding:2px 6px;border-radius:4px;background:#eee}.tag.ok{background:#dcfce7;color:#166534}.tag.bad{background:#fee2e2;color:#991b1b}
+code{font-size:12px}
 </style></head><body>
 <h1>Reproducibility Report: {{ project_name }}</h1>
 {% if is_demo %}<p class="warn"><b>DEMO FIXTURE.</b> Synthetic paper and repo. This is not an independent reproduction of a published paper.</p>{% endif %}
@@ -14,6 +15,30 @@ th{background:#f3f3f3}.warn{background:#fff6e0;padding:.6rem;border-left:4px sol
 <table><tr><th>Parameter</th><th>Value</th><th>Source</th><th>Reference</th></tr>
 {% for k, v in params.items() %}<tr><td>{{ k }}</td><td>{{ v.value if v.value is not none else 'MISSING' }}</td><td><span class="tag">{{ v.source }}</span></td><td>{{ v.ref or '' }}</td></tr>{% endfor %}</table>
 {% if warnings %}<p class="warn"><b>Scanner warnings</b></p><ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>{% endif %}
+{% if checkpoint %}
+<h2>Model checkpoint</h2>
+{% set ck = checkpoint %}
+<p><b>Status: <span class="tag {{ 'ok' if ck.verdict_key in ('recovered','pinned','present') else 'bad' }}">{{ ck.verdict }}</span></b></p>
+{% if ck.missing %}<p>Weights the code loads that the repository does not contain:</p>
+<table><tr><th>Location</th><th>Loader</th><th>Expected path</th></tr>
+{% for m in ck.missing %}<tr><td>{{ m.file }}:{{ m.line }}</td><td>{{ m.loader }}</td><td>{{ m.value or ('--' ~ m.flag ~ ' (no default)') }}</td></tr>{% endfor %}</table>{% endif %}
+{% for e in ck.entries %}
+<table>
+<tr><th style="width:28%">Checkpoint</th><td><a href="https://huggingface.co/{{ e.repo_id }}/tree/{{ e.sha }}">{{ e.repo_id }}</a> ({{ e.role | replace('_', ' ') }}, {{ e.confidence }} confidence)</td></tr>
+<tr><th>Pinned revision</th><td><code>{{ e.sha }}</code><br><small>{{ e.revision_source }}</small></td></tr>
+<tr><th>Evidence</th><td><ul>{% for x in e.evidence %}<li><b>{{ x.source }}</b> ({{ x.kind }}): {{ x.ref }}</li>{% endfor %}</ul></td></tr>
+<tr><th>Model</th><td>{{ (e.architectures or ['?'])[0] }} &middot; {{ e.pipeline_tag or '' }} &middot; {{ e.library or '' }}{% if e.license %} &middot; license {{ e.license }}{% endif %}{% if e.task_match %}<br><small>Model card datasets also named in the paper: {{ e.task_match | join(', ') }}</small>{% endif %}</td></tr>
+<tr><th>Files</th><td>{{ e.files | join(', ') }} ({{ '%.1f' | format(e.size_bytes / 1e6) }} MB)</td></tr>
+<tr><th>Integrity</th><td>{% if e.integrity %}{{ e.integrity.n_verified }}/{{ e.integrity.n_files }} files match the Hub's hashes{% for f in e.integrity.files if f.ok is sameas false %}<br><b>MISMATCH: {{ f.name }}</b>{% endfor %}{% else %}not downloaded yet{% endif %}</td></tr>
+<tr><th>Load check</th><td>{% set lc = e.load_check %}{% if not lc %}not run yet{% elif lc.ok %}Loaded as <b>{{ lc.class }}</b>{% if lc.n_params %} ({{ '%.1f' | format(lc.n_params / 1e6) }}M parameters){% endif %} with {{ lc.library }}{% if lc.id2label %}; labels {{ lc.id2label.values() | join(', ') }}{% endif %}{% elif lc.ok is none %}skipped: {{ lc.skipped }}{% else %}<b>FAILED</b>: {{ lc.error }}{% endif %}</td></tr>
+<tr><th>Connected to code</th><td>{% for x in e.placed %}{{ x.ref ~ ': ' if x.ref else '' }}{{ x.detail }}<br>{% endfor %}{% for x in e.unmapped %}<b>Not connected</b> {{ x.ref }}: {{ x.reason }}<br>{% endfor %}{% if not e.placed and not e.unmapped %}pending run{% endif %}</td></tr>
+{% if e.eval_results %}<tr><th>Model card metrics<br><small>(self-reported by the Hub page)</small></th><td>{% for r in e.eval_results %}{{ r.metric }} = {{ '%.4f' | format(r.value) }} on {{ r.dataset }}/{{ r.config }} {{ r.split }}{{ ' (Hub-verified)' if r.verified else '' }}<br>{% endfor %}</td></tr>{% endif %}
+</table>
+{% endfor %}
+{% if ck.error %}<p class="warn"><b>Checkpoint stage failed:</b> {{ ck.error }}</p>{% endif %}
+{% if ck.rejected %}<p>Candidates considered and rejected:</p><ul>{% for c in ck.rejected %}<li><code>{{ c.repo_id or c.requested_id }}</code>: {{ c.rejected or c.role_note }}</li>{% endfor %}</ul>{% endif %}
+{% if ck.external_links and not ck.entries %}<p>Other weight links found (not auto-downloaded: they cannot be pinned or hash-verified):</p><ul>{% for l in ck.external_links %}<li>{{ l.url }} <small>({{ l.file or ('p.' ~ l.page) }})</small></li>{% endfor %}</ul>{% endif %}
+{% endif %}
 <h2>3. Paper vs. code findings</h2>
 <table><tr><th>Param</th><th>Paper</th><th>Code</th><th>Status</th><th>Severity</th></tr>
 {% for f in findings %}<tr><td>{{ f.param }}</td><td>{{ f.paper_value }}</td><td>{{ f.code_value }}</td><td>{{ f.status }}</td><td>{{ f.severity }}</td></tr>{% endfor %}</table>
@@ -28,7 +53,8 @@ Diff: {{ '%+.2f'|format(verification.diff_pp) }} pp &middot; Tolerance: {{ verif
 <h2>6. Limitations</h2>
 <ul><li>Matching a headline metric does not prove the whole experiment was reproduced.</li>
 <li>Seeds, hardware, and library versions can change results.</li>
-<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li></ul>
+<li>Missing parameters were not guessed; code defaults were used where the paper was silent.</li>
+{% if checkpoint and checkpoint.entries %}<li>The checkpoint was verified as the exact one the paper/repository references (identity, pinned commit, file hashes). That does not prove it is the exact training run behind every number in the paper.</li>{% endif %}</ul>
 <h2>7. Evidence ledger</h2>
 <table><tr><th>Finding</th><th>Evidence</th><th>Type</th></tr>
 {% for e in ledger %}<tr><td>{{ e.item }}</td><td>{{ e.evidence }}</td><td>{{ e.type }}</td></tr>{% endfor %}</table>

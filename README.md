@@ -87,10 +87,19 @@ CrisisGrid includes two complete synthetic fixtures to demonstrate all features:
    - Demonstrates **injectability enforcement**: only CLI parameters (`--lr`, `--num_epochs`) are editable in the graph; editing non-injectable parameters (`batch_size`) is rejected to ensure runs reflect user intent.
    - Demonstrates conflict detection and identical-seed warning when no CLI seed flag exists.
 
+3. **Fixture 3 (`fixtures/demo_repo_checkpoint` + `fixtures/demo_paper_checkpoint.pdf`)**: missing trained weights.
+   - Evaluates DistilBERT on SST-2 (Sanh et al., 2019, arXiv:1910.01108; paper reports 91.3% dev accuracy).
+   - `eval_sst2.py` loads `checkpoints/distilbert-sst2/`, which is **not in the repo** (gitignored, 268 MB).
+   - CrisisGrid detects the missing weights, identifies `distilbert/distilbert-base-uncased-finetuned-sst-2-english`
+     from the README and paper, pins its commit, downloads it, verifies every file hash, loads it, runs the
+     evaluation and compares the measured accuracy with the paper.
+   - Terminal walkthrough: `python scripts/checkpoint_demo.py` (add `--no-llm` for deterministic extraction).
+
 To regenerate the fixture PDFs:
 ```bash
 python fixtures/make_demo_paper.py
 python fixtures/make_demo_paper_config.py
+python fixtures/make_demo_paper_checkpoint.py
 ```
 
 ---
@@ -102,10 +111,39 @@ python fixtures/make_demo_paper_config.py
 - **`leakage_detector.py`**: AST rules checking for preprocessing transformers (`StandardScaler`, `PCA`, etc.) fitted before `train_test_split` or on the entire dataset.
 - **`reconciler.py`**: Normalizes parameter names across code and paper, determines severity, and generates plain-English explanations.
 - **`spec_builder.py`**: Merges paper and code into an immutable spec with provenance tags (`paper`, `code`, `user`, `missing`). Flags injectable parameters.
+- **`checkpoint_manager.py`**: Recovers missing trained weights (see below): matches references against the Hugging Face Hub, pins the commit, downloads only the needed files, verifies hashes, load-checks and connects the checkpoint to the code.
 - **`runner.py`**: Runs multi-seed experiments in isolated Docker container (or fresh virtualenv fallback), writing manifests and reading `metrics.json`.
 - **`verifier.py`**: Computes difference in percentage points, standard deviation, seed bounds, and reproducibility verdict (`REPRODUCED`, `PARTIALLY_REPRODUCED`, `NOT_REPRODUCED`, `BLOCKED`).
 - **`versioning.py`**: Produces immutable specs, computes configuration hashes, and performs single-factor comparative analysis.
 - **`report.py`**: Generates comprehensive reproducibility report with evidence ledger as HTML and PDF.
+
+---
+
+## Missing Trained Weights (Checkpoint Recovery)
+
+Many repositories ship the code but not the trained weights. Instead of failing, CrisisGrid tries to recover the
+**exact** checkpoint, and refuses to substitute anything it cannot verify.
+
+1. **Detect** (`repo_scanner.scan_weights`): AST scan of every weight load (`from_pretrained`, `torch.load`,
+   `pipeline(model=...)`, `joblib.load`, `load_from_checkpoint`, ...), resolving argparse defaults and constants.
+   Each load is `present`, `missing` (path not in repo, or a Git LFS pointer), `produced` (the repo's own training
+   writes it), `hub` (a Hub model ID) or `flag` (a CLI flag with no default).
+2. **Identify** (`paper_analyzer.extract_model_references` + `checkpoint_manager.plan_checkpoint`): candidates come
+   only from explicit references in the paper (quote-verified), README, config files or code. The Hub is never
+   searched by name. Each candidate is confirmed on the Hub and rejected if it does not exist, has no weights, is
+   gated, is too large (`CHECKPOINT_MAX_GB`), or has the wrong head for the loading code (for example a base
+   `BertForMaskedLM` when the code expects a sequence classifier). A base model that the repo's own training code
+   fine-tunes is never used as the trained checkpoint. Ties are reported as `ambiguous`, not guessed.
+3. **Download** (`checkpoint_manager.prepare`, at the run's setup stage): `snapshot_download` pinned to the commit
+   SHA, fetching config/tokenizer files plus one weight format. Every file is checked against the Hub's SHA-256
+   (LFS) or git blob hash.
+4. **Load and run**: the checkpoint is loaded with its own library inside the experiment's environment, then
+   connected without editing code: injected as the CLI flag value, placed at the hardcoded relative path, or
+   served from a pinned offline Hub cache. The run's `metrics.json` goes to the verifier as usual.
+
+If no verifiable checkpoint exists, the run is **BLOCKED** with the reason, and the report lists rejected
+candidates and any non-Hub links (Google Drive, S3, ...) for manual follow-up. Endpoints:
+`GET /projects/{pid}/checkpoint`, `POST /projects/{pid}/checkpoint/resolve`, `POST /projects/{pid}/checkpoint/fetch`.
 
 ---
 

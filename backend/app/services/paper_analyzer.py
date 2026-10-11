@@ -540,6 +540,78 @@ def extract_repo_url(pages: list[str]) -> str | None:
     return None
 
 
+# Hugging Face model URLs (not datasets/spaces/docs), optionally pinned to /tree/<rev>
+_HF_MODEL_URL = re.compile(
+    r"(?:https?://)?(?:www\.)?(?:huggingface\.co|hf\.co)/"
+    r"(?!datasets/|spaces/|docs\b|blog\b|papers\b|join\b|login\b|models\b|organizations\b|collections\b|"
+    r"tasks\b|learn\b|transformers\b|api\b)"
+    r"([A-Za-z0-9][\w.-]*/[A-Za-z0-9][\w.-]*[A-Za-z0-9])"
+    r"(?:/(?:tree|blob|resolve|commit)/([\w.-]+))?", re.IGNORECASE)
+_FROM_PRETRAINED = re.compile(r"from_pretrained\(\s*[\"'\u201c\u2018]([\w.-]+/[\w.-]+)[\"'\u201d\u2019]")
+# owner/name tokens are only considered next to words that signal a released checkpoint
+_CKPT_CONTEXT = re.compile(r"hugging\s*face|model\s*hub|checkpoints?|pre-?trained\s+weights|released|hf\.co", re.I)
+_MODEL_TOKEN = re.compile(r"(?<![\w/.:-])([A-Za-z][\w-]{1,38}/[A-Za-z0-9][\w.-]{1,95}[A-Za-z0-9])(?![\w/])")
+_EXTERNAL_WEIGHTS = re.compile(
+    r"https?://\S*(?:drive\.google\.com|zenodo\.org|figshare\.com|dropbox\.com|/releases/download/)\S*", re.I)
+
+
+_NOT_MODEL_PARTS = {"train", "test", "dev", "val", "valid", "validation", "base", "large", "small", "tiny",
+                    "input", "output", "and", "or", "with", "without", "yes", "no", "true", "false", "min", "max"}
+
+
+def _plausible_model_token(tok: str) -> bool:
+    """Drop slash pairs that are obviously not Hub IDs (train/test, SST-2/MNLI, bert-base/large)."""
+    owner, name = tok.split("/", 1)
+    if re.match(r"^(?:github\.com|www|http)", tok, re.I) or "." in owner or not any(c.isalpha() for c in name):
+        return False
+    if owner.lower() in _NOT_MODEL_PARTS or name.lower() in _NOT_MODEL_PARTS:
+        return False
+    if re.fullmatch(r"[A-Z0-9-]+", owner) and re.fullmatch(r"[A-Z0-9-]+", name):  # benchmark pairs
+        return False
+    return len(name) >= 3
+
+
+def extract_model_references(pages: list[str]) -> dict[str, Any]:
+    """Model checkpoint references stated in the paper, each with page + verified quote.
+
+    kind = "url"     an explicit huggingface.co/<owner>/<model> link
+           "code"    a from_pretrained("<owner>/<model>") snippet
+           "mention" an owner/model token near checkpoint vocabulary (weaker; never enough on its own)
+    Nothing here is guessed: every candidate is later checked against the Hub by checkpoint_manager.
+    """
+    hub_ids: list[dict[str, Any]] = []
+    links: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+
+    def add(repo_id: str, rev: str | None, kind: str, page: int, text: str, start: int, end: int):
+        repo_id = repo_id.rstrip(".,;:")
+        key = (repo_id.lower(), kind)
+        if key in seen:
+            return
+        seen.add(key)
+        quote = _snippet(text, start, end, pad=40)
+        hub_ids.append({"repo_id": repo_id, "revision": rev, "kind": kind, "page": page,
+                        "quote": quote, "verified": verify_quote(quote, text)})
+
+    for i, raw in enumerate(pages):
+        # Re-join URLs that the PDF layout broke across lines ("huggingface.co/\ndistilbert/...")
+        text = re.sub(r"((?:huggingface|hf)\.co/)\s+", r"\1", raw)
+        text = re.sub(r"(huggingface\.co/[\w.-]+/)\s+", r"\1", text)
+        for m in _HF_MODEL_URL.finditer(text):
+            add(m.group(1), m.group(2), "url", i + 1, text, m.start(), m.end())
+        for m in _FROM_PRETRAINED.finditer(text):
+            add(m.group(1), None, "code", i + 1, text, m.start(), m.end())
+        for m in _MODEL_TOKEN.finditer(text):
+            window = text[max(0, m.start() - 150): m.end() + 150]
+            tok = m.group(1)
+            if _CKPT_CONTEXT.search(window) and _plausible_model_token(tok):
+                if not any(h["repo_id"].lower() == tok.lower() for h in hub_ids):
+                    add(tok, None, "mention", i + 1, text, m.start(), m.end())
+        for m in _EXTERNAL_WEIGHTS.finditer(text):
+            links.append({"url": m.group(0).rstrip(".,;:)"), "page": i + 1})
+    return {"hub_ids": hub_ids[:10], "external_links": links[:10]}
+
+
 def get_paper_metadata(pdf_path: str) -> dict[str, Any]:
     """Return page count, dimensions for each page, and any discovered repo URL."""
     import pymupdf
@@ -582,5 +654,6 @@ def analyze_paper(pdf_path: str) -> dict[str, Any]:
     attach_bboxes(fields, pdf_path)
     title = extract_title(pdf_path, pages)
     return {"title": title, "fields": fields, "flags": flags, "n_pages": len(pages), "method": method,
-            "note": note, "discovered_repo": discovered_repo, "methodology": methodology}
+            "note": note, "discovered_repo": discovered_repo, "methodology": methodology,
+            "model_refs": extract_model_references(pages)}
 

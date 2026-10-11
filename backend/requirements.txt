@@ -12,3 +12,4 @@ reportlab
 pyyaml
 python-dotenv
 httpx
+huggingface_hub>=0.23

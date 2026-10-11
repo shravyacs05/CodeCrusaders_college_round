@@ -10,7 +10,8 @@ from fastapi import BackgroundTasks, Body, FastAPI, File, Form, HTTPException, R
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from .config import DATA_DIR, TOLERANCE_PP
-from .services import (architecture_builder, checklist_auditor, auto_healer, leakage_detector, notebook_exporter,
+from .services import (architecture_builder, checklist_auditor, checkpoint_manager, auto_healer, leakage_detector,
+                       notebook_exporter,
                        paper_analyzer, reconciler, repo_scanner, report, runner,
                        spec_builder, verifier, versioning, robustness_radar, xai_explainer,
                        scaffold_synthesizer, kpi_assistant, llm)
@@ -77,6 +78,18 @@ def warm_notebook_model(pid: str, eid: str, proj: dict) -> None:
     methodology = proj.get("paper", {}).get("methodology")
     threading.Thread(target=_nb_build_model, daemon=True,
                      args=(pid, eid, spec, methodology, proj.get("name", "Reproduction Project"))).start()
+
+
+def attach_checkpoint_plan(paper: dict, scan: dict, pages: list[str]) -> dict:
+    """Match missing/Hub-loaded weights to a verified checkpoint (metadata only, no download)."""
+    try:
+        plan = checkpoint_manager.plan_checkpoint(scan.get("weights"), paper.get("model_refs"), "\n".join(pages))
+    except Exception as e:
+        plan = {"status": "error", "weights_status": (scan.get("weights") or {}).get("status"),
+                "error": str(e), "missing": [], "candidates": [], "selected": [], "external_links": []}
+    scan["checkpoint"] = plan
+    scan.setdefault("warnings", []).extend(checkpoint_manager.plan_warnings(plan))
+    return plan
 
 
 def get_exp(eid: str) -> tuple[str, dict, dict]:
@@ -147,7 +160,8 @@ def project_detail(pid: str):
             "repo_url": p["repo_url"], "commit": p.get("commit"), "error": p.get("error"),
             "paper": paper,
             "scan": {"blocked": p["scan"].get("blocked"), "entrypoint": p["scan"].get("entrypoint"),
-                     "warnings": p["scan"].get("warnings", [])} if p.get("scan") else None,
+                     "warnings": p["scan"].get("warnings", []),
+                     "checkpoint": p["scan"].get("checkpoint")} if p.get("scan") else None,
             "experiments": [{k: e[k] for k in ("id", "parent_id", "version", "diff_from_parent",
                                                 "config_hash", "spec")} for e in exps]}
 
@@ -302,6 +316,7 @@ def analyze(pid: str):
             "CrisisGrid autonomously synthesized an executable benchmark scaffold based on the paper's extracted specifications."
         )
 
+    attach_checkpoint_plan(paper, scan, paper_analyzer.extract_pages(proj["paper_path"]))
     findings = reconciler.reconcile(paper["fields"], scan["params"], enrich_llm=True)
     spec = spec_builder.build_spec(paper, scan)
     eid = uuid.uuid4().hex[:8]
@@ -383,7 +398,18 @@ def analyze_stream(pid: str):
                 "CrisisGrid autonomously synthesized an executable benchmark scaffold based on the paper's extracted specifications."
             )
 
-        # 5. Reconciliation & DAG Spec
+        # 5. Model weights: are they in the repo, and if not, can the exact checkpoint be identified?
+        w = scan.get("weights") or {}
+        if w.get("status") in ("missing", "hub_reference"):
+            yield f"data: {json.dumps({'stage': 'weights', 'pct': 85, 'message': 'Checking model weights: matching code, README and paper references against the Hugging Face Hub...'})}\n\n"
+            plan = attach_checkpoint_plan(paper, scan, pages)
+            sel = next(iter(plan.get("selected", [])), None)
+            msg = (f"Checkpoint identified: {sel['repo_id']} @ {sel['sha'][:7]}" if sel and plan["status"] == "identified"
+                   else f"Hub models pinned: {', '.join(x['repo_id'] for x in plan['selected'])}" if plan["status"] == "pinned"
+                   else f"Trained weights missing; checkpoint status: {plan['status']}")
+            yield f"data: {json.dumps({'stage': 'weights', 'pct': 88, 'message': msg})}\n\n"
+
+        # 6. Reconciliation & DAG Spec
         yield f"data: {json.dumps({'stage': 'reconcile', 'pct': 90, 'message': 'Reconciling paper specifications against codebase AST parameters...'})}\n\n"
         findings = reconciler.reconcile(paper["fields"], scan["params"], enrich_llm=True)
         spec = spec_builder.build_spec(paper, scan)
@@ -457,10 +483,21 @@ def _do_runs(pid: str, eid: str, seeds: int, use_docker: bool):
                              "setup_log": Path(setup["log"]).read_text()[-1500:]}
         save(pid, proj)
         return
+    ckpt = runner.prepare_checkpoint(exp["spec"], proj.get("scan"), _p(pid), _p(pid) / "repo",
+                                     setup["python"], use_docker, on_event)
+    if ckpt is not None:
+        proj = load(pid)
+        proj["runs"][eid]["checkpoint"] = ckpt
+        if not ckpt["ok"]:
+            state.update(state="failed", failed_stage="checkpoint", error=ckpt["error"])
+        proj["runs"][eid]["status"] = state
+        save(pid, proj)
+        if not ckpt["ok"]:
+            return
     for s in range(seeds):
         r = runner.run_seed(_p(pid) / "repo", exp["spec"], s, _p(pid) / "runs" / eid, eid,
                             exp["parent_id"], proj["commit"], use_docker, on_event,
-                            setup["python"])
+                            setup["python"], checkpoint=ckpt)
         proj = load(pid)
         proj["runs"][eid]["results"].append(r)
         state["seeds_done"] = s + 1
@@ -477,6 +514,9 @@ def run(eid: str, bg: BackgroundTasks, body: dict = Body(default={"seeds": 3})):
     pid, proj, exp = get_exp(eid)
     if exp["spec"].get("blocked") or not exp["spec"].get("run_command_template"):
         raise HTTPException(400, f"BLOCKED: {exp['spec'].get('blocked')}")
+    reason = checkpoint_manager.blocking_reason(exp["spec"].get("checkpoint"))
+    if reason and not body.get("allow_missing_weights"):
+        raise HTTPException(400, f"BLOCKED: {reason}")
     bg.add_task(_do_runs, pid, eid, int(body.get("seeds", 3)), runner.docker_available())
     return {"started": True}
 
@@ -626,6 +666,72 @@ def ask_about_kpi(pid: str, body: dict = Body(...)):
         raise HTTPException(502, str(e))
 
 
+def _checkpoint_view(proj: dict, exp: dict) -> dict | None:
+    """Plan + the most recent download/verification record (from a run or an explicit fetch)."""
+    record = (proj.get("runs", {}).get(exp["id"]) or {}).get("checkpoint") or proj.get("checkpoint_fetch")
+    return report.checkpoint_view(exp["spec"].get("checkpoint"), record)
+
+
+@app.get("/projects/{pid}/checkpoint")
+def get_checkpoint(pid: str, experiment_id: str | None = None):
+    """Weights status, the identified checkpoint with its evidence, and verification results."""
+    proj = load(pid)
+    exps = proj.get("experiments", {})
+    if not exps:
+        raise HTTPException(400, "not analyzed yet")
+    exp = exps[experiment_id] if experiment_id in exps else max(exps.values(), key=lambda e: e["version"])
+    return {"plan": exp["spec"].get("checkpoint"), "view": _checkpoint_view(proj, exp),
+            "weights": (proj.get("scan") or {}).get("weights"), "fetch": proj.get("checkpoint_fetch")}
+
+
+@app.post("/projects/{pid}/checkpoint/resolve")
+def resolve_checkpoint(pid: str):
+    """Re-scan the repo for weights and re-match them against the Hub (e.g. after being offline)."""
+    proj = load(pid)
+    if not proj.get("experiments"):
+        raise HTTPException(400, "not analyzed yet")
+    scan = proj["scan"]
+    scan["weights"] = repo_scanner.scan_weights(_p(pid) / "repo")
+    scan["warnings"] = [w for w in scan.get("warnings", []) if not w.startswith(("🧩", "✅", "📌", "⛔", "Rejected checkpoint"))]
+    scan["warnings"] += repo_scanner.weights_warnings(scan["weights"])
+    plan = attach_checkpoint_plan(proj["paper"], scan, paper_analyzer.extract_pages(proj["paper_path"]))
+    for e in proj["experiments"].values():
+        e["spec"]["checkpoint"] = plan
+        e["spec"]["warnings"] = scan["warnings"]
+    save(pid, proj)
+    return plan
+
+
+def _do_fetch_checkpoint(pid: str):
+    proj = load(pid)
+    exp = max(proj["experiments"].values(), key=lambda e: e["version"])
+    use_docker = runner.docker_available()
+    setup = runner.setup_env(_p(pid) / "repo", _p(pid) / "runs", use_docker, lambda *a: None)
+    rec = runner.prepare_checkpoint(exp["spec"], proj.get("scan"), _p(pid), _p(pid) / "repo",
+                                    setup.get("python"), use_docker, lambda *a: None) if setup["ok"] else \
+        {"ok": False, "error": f"environment setup failed: {setup.get('error')}", "entries": []}
+    proj = load(pid)
+    proj["checkpoint_fetch"] = {**(rec or {"ok": True, "entries": [], "error": None}), "state": "finished"}
+    save(pid, proj)
+
+
+@app.post("/projects/{pid}/checkpoint/fetch")
+def fetch_checkpoint(pid: str, bg: BackgroundTasks):
+    """Download, hash-verify and load-check the identified checkpoint without running the experiment."""
+    proj = load(pid)
+    if not proj.get("experiments"):
+        raise HTTPException(400, "not analyzed yet")
+    exp = max(proj["experiments"].values(), key=lambda e: e["version"])
+    plan = exp["spec"].get("checkpoint") or {}
+    if plan.get("status") not in ("identified", "pinned"):
+        raise HTTPException(400, checkpoint_manager.blocking_reason(plan) or
+                            f"nothing to fetch (weights status: {plan.get('weights_status', 'unknown')})")
+    proj["checkpoint_fetch"] = {"state": "running"}
+    save(pid, proj)
+    bg.add_task(_do_fetch_checkpoint, pid)
+    return {"started": True}
+
+
 @app.get("/projects/{pid}/report", response_class=HTMLResponse)
 def get_report(pid: str, experiment_id: str | None = None):
     proj = load(pid)
@@ -635,12 +741,13 @@ def get_report(pid: str, experiment_id: str | None = None):
     exp = exps[experiment_id] if experiment_id else max(exps.values(), key=lambda e: e["version"])
     ver = _verification(proj, exp["id"])
     runs = proj["runs"].get(exp["id"], {}).get("results", [])
+    ck = _checkpoint_view(proj, exp)
     html = report.render_report({
         "project_name": proj["name"], "is_demo": proj.get("is_demo"),
         "claim": exp["spec"]["claim"], "params": exp["spec"]["params"],
         "warnings": exp["spec"].get("warnings", []),
-        "findings": proj["findings"], "runs": runs, "verification": ver,
-        "ledger": report.evidence_ledger(proj["findings"], ver)})
+        "findings": proj["findings"], "runs": runs, "verification": ver, "checkpoint": ck,
+        "ledger": report.evidence_ledger(proj["findings"], ver, ck)})
     (_p(pid) / "report.html").write_text(html)
     return html
 
@@ -654,12 +761,13 @@ def get_report_pdf(pid: str, experiment_id: str | None = None):
     exp = exps[experiment_id] if experiment_id else max(exps.values(), key=lambda e: e["version"])
     ver = _verification(proj, exp["id"])
     runs = proj["runs"].get(exp["id"], {}).get("results", [])
+    ck = _checkpoint_view(proj, exp)
     ctx = {
         "project_name": proj["name"], "is_demo": proj.get("is_demo"),
         "claim": exp["spec"]["claim"], "params": exp["spec"]["params"],
         "warnings": exp["spec"].get("warnings", []),
-        "findings": proj["findings"], "runs": runs, "verification": ver,
-        "ledger": report.evidence_ledger(proj["findings"], ver)
+        "findings": proj["findings"], "runs": runs, "verification": ver, "checkpoint": ck,
+        "ledger": report.evidence_ledger(proj["findings"], ver, ck)
     }
     pdf_path = _p(pid) / "report.pdf"
     report.render_pdf(ctx, pdf_path)

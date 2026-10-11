@@ -31,3 +31,4 @@ else:
 TOLERANCE_PP = float(os.getenv("TOLERANCE_PP", "1.0"))  # percentage points
 RUN_TIMEOUT_S = int(os.getenv("RUN_TIMEOUT_S", "300"))
 SETUP_TIMEOUT_S = int(os.getenv("SETUP_TIMEOUT_S", "900"))
+CHECKPOINT_MAX_GB = float(os.getenv("CHECKPOINT_MAX_GB", "5"))  # refuse to auto-download larger checkpoints
