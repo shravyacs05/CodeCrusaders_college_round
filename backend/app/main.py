@@ -119,8 +119,23 @@ def list_projects():
         f = d / "project.json"
         if f.exists():
             p = json.loads(f.read_text())
-            out.append({"id": p["id"], "name": p["name"], "status": p["status"],
-                        "is_paper_only": p.get("is_paper_only", False)})
+            status = p.get("status", "analyzed")
+            exps = p.get("experiments", {})
+            if exps:
+                root_eid = list(exps.keys())[0]
+                try:
+                    ver = _verification(p, root_eid)
+                    if ver and ver.get("status") in ("REPRODUCED", "NOT_REPRODUCED"):
+                        status = ver["status"]
+                except Exception:
+                    pass
+            out.append({
+                "id": p["id"],
+                "name": p["name"],
+                "status": status,
+                "is_paper_only": p.get("is_paper_only", False),
+                "is_demo": p.get("is_demo", False),
+            })
     return out
 
 

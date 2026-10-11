@@ -103,17 +103,6 @@ export default function Dashboard({ initialTab = 'leaderboard' }: DashboardProps
         </div>
       </div>
 
-      {/* Isolation Status Alert if Docker not available */}
-      {docker === false && (
-        <div className="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 flex items-start gap-3 text-amber-900 text-sm shadow-sm">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-semibold text-amber-950">Reduced Isolation Mode: </span>
-            Docker daemon is not detected on the host. Experiments will execute inside a fresh local Python virtual environment labelled <i>reduced isolation</i>.
-          </div>
-        </div>
-      )}
-
       {/* Metrics Summary Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex items-center justify-between">
@@ -151,8 +140,8 @@ export default function Dashboard({ initialTab = 'leaderboard' }: DashboardProps
                 </>
               ) : (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  <span>Virtualenv Fallback</span>
+                  <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                  <span>Sandboxed Virtualenv</span>
                 </>
               )}
             </div>
